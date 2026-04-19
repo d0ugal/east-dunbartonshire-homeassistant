@@ -1,6 +1,10 @@
 [project]
 name = "scottish-bins-homeassistant"
 version = "1.0.0"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
 
 [tool.ruff]
 target-version = "py312"
@@ -21,6 +25,9 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components.scottish_bins"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.pyright]
 pythonVersion = "3.12"

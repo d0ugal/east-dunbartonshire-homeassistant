@@ -33,16 +33,10 @@ from .coordinator import (
     fetch_clackmannanshire_properties,
     fetch_east_dunbartonshire_uprns,
     fetch_falkirk_properties,
+    format_east_dun_address,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _format_east_dun_address(item: dict) -> str:
-    parts = [item.get("addressLine1", ""), item.get("town", "")]
-    if item.get("postcode"):
-        parts.append(item["postcode"])
-    return ", ".join(p for p in parts if p)
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -102,7 +96,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _search_properties(self, session, query: str) -> list[tuple[str, str]]:
         if self._council == COUNCIL_EAST_DUNBARTONSHIRE:
             results = await fetch_east_dunbartonshire_uprns(session, query)
-            return [(item["uprn"], _format_east_dun_address(item)) for item in results]
+            return [(item["uprn"], format_east_dun_address(item)) for item in results]
         if self._council == COUNCIL_CLACKMANNANSHIRE:
             return await fetch_clackmannanshire_properties(session, query)
         if self._council == COUNCIL_FALKIRK:

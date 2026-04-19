@@ -111,6 +111,13 @@ async def fetch_east_dunbartonshire_uprns(session, address: str) -> list[dict]:
         return await resp.json()
 
 
+def format_east_dun_address(item: dict) -> str:
+    parts = [item.get("addressLine1", ""), item.get("town", "")]
+    if item.get("postcode"):
+        parts.append(item["postcode"])
+    return ", ".join(p for p in parts if p)
+
+
 # ---------------------------------------------------------------------------
 # Clackmannanshire
 # ---------------------------------------------------------------------------
@@ -121,7 +128,10 @@ async def fetch_clackmannanshire_properties(session, postcode: str) -> list[tupl
     async with session.get(CLACKS_SEARCH_URL, params={"pc": postcode}) as resp:
         resp.raise_for_status()
         html = await resp.text()
+    return _parse_clackmannanshire_search(html)
 
+
+def _parse_clackmannanshire_search(html: str) -> list[tuple[str, str]]:
     matches = re.findall(
         r'href="/environment/wastecollection/id/(\d+)/">(.*?)</a>',
         html,
@@ -200,7 +210,10 @@ async def fetch_falkirk_properties(session, query: str) -> list[tuple[str, str]]
     async with session.get(FALKIRK_SEARCH_URL, params={"query": query}) as resp:
         resp.raise_for_status()
         html = await resp.text()
+    return _parse_falkirk_search(html)
 
+
+def _parse_falkirk_search(html: str) -> list[tuple[str, str]]:
     matches = re.findall(
         r'href="/collections/(\d+)">(.*?)</a>',
         html,
@@ -209,11 +222,13 @@ async def fetch_falkirk_properties(session, query: str) -> list[tuple[str, str]]
 
 
 async def _fetch_falkirk(session, uprn: str) -> list[BinCollection]:
-    today = date.today()
     async with session.get(f"{FALKIRK_API_URL}{uprn}", allow_redirects=True) as resp:
         resp.raise_for_status()
         data = await resp.json()
+    return _parse_falkirk_json(data, date.today())
 
+
+def _parse_falkirk_json(data: dict, today: date) -> list[BinCollection]:
     collections = []
     for item in data.get("collections", []):
         bin_type = item.get("type", "")
@@ -228,5 +243,4 @@ async def _fetch_falkirk(session, uprn: str) -> list[BinCollection]:
                     next_date=min(dates),
                 )
             )
-
     return collections

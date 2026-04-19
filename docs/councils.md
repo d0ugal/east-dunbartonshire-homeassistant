@@ -42,22 +42,31 @@ Technical notes on each council's bin collection website, for contributors addin
 
 ### North Ayrshire
 
-- **Status:** Not implemented — good candidate
-- **Approach:** ArcGIS REST API, single GET per UPRN
-- **API:** `https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/YourLocationLive/MapServer/8/query?where=UPRN='<UPRN>'&outFields=*&f=json`
-- **Response fields:** `COLLECTION_DAY`, `BLUE_DATE_TEXT`, `GREY_DATE_TEXT`, `PURPLE_DATE_TEXT`, `BROWN_DATE_TEXT` (dates as `dd/mm/yyyy`)
-- **Remaining work:** Find how to resolve a postcode/address to UPRN (likely a separate address search API on their site or standard OS Places)
-- **Notes:** The website is a React SPA but the underlying data is a public ArcGIS feature service — no scraping needed
+- **Status:** Not implemented — excellent candidate (clean ArcGIS API)
+- **Address search:** `GET https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/CAG_VIEW/MapServer/0/query?where=UPPER(ADDRESS) LIKE UPPER('%<query>%')&outFields=ADDRESS,UPRN&orderByFields=ADDRESS ASC&returnGeometry=false&f=json`
+  - Returns array of features with `attributes.ADDRESS` and `attributes.UPRN` (12-digit zero-padded, e.g. `000126025453`)
+- **Collection data:** `GET https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/YourLocationLive/MapServer/8/query?where=UPRN='<uprn_stripped>'&outFields=*&f=json`
+  - **Important:** strip leading zeros from UPRN before querying this endpoint (e.g. `000126025453` → `126025453`)
+  - Response fields: `BLUE_DATE_TEXT`, `GREY_DATE_TEXT`, `PURPLE_DATE_TEXT`, `BROWN_DATE_TEXT` (dates as `dd/mm/yyyy`)
+- **Notes:** The main website is a React SPA but both APIs are public ArcGIS feature services — no scraping or auth needed
 
 ### West Lothian
 
-- **Status:** Not implemented — good candidate
-- **Approach:** GOSSForms (GOSS Interactive CMS) — fully server-rendered multi-step POST form
+- **Status:** Not implemented — good candidate (GOSSForms, complex but fully server-rendered)
+- **Approach:** GOSSForms (GOSS Interactive CMS); 5-network-request flow using `aiohttp.ClientSession` with a cookie jar
 - **Flow:**
-  1. GET `https://www.westlothian.gov.uk/bin-collections` to extract `pageSessionId`, `fsid`, `fsn` UUIDs from the form
-  2. POST PAGE1 with postcode field `WLBINCOLLECTION_PAGE1_ADDRESSLOOKUP` to get address dropdown
-  3. POST PAGE2 with UPRN to get `ICALCONTENT` (inline ICS calendar data) or direct collection dates
-- **Notes:** Each response includes a new `fsn` nonce. The `ICALCONTENT` field in PAGE2 response contains inline ICS data — parse with the same ICS parser used for Clackmannanshire.
+  1. `GET https://www.westlothian.gov.uk/bin-collections` → extract `pageSessionId`, `fsid`, `fsn` UUIDs from form hidden fields
+  2. `POST` PAGE1 form action (triggers cookie challenge) → 303 to `/apiserver/formsservice/http/verifycookie?...`
+  3. `GET` verifycookie URL → sets `goss-formsservice-clientid` cookie → 303 back to `/bin-collections?...&fsn=<NEW>`
+  4. Address lookup via JSONP: `GET /apiserver/postcode?jsonrpc={"id":1,"method":"postcodeSearch","params":{"provider":"EndPoint","postcode":"<pc>"}}&callback=cb` → strip `cb(...)` wrapper → JSON array with `udprn`, `line1`–`line5`, `town`, `postcode`
+  5. `POST` PAGE1 again with new `fsn`, `WLBINCOLLECTION_PAGE1_UPRN=<udprn>`, `WLBINCOLLECTION_PAGE1_ADDRESSSTRING=<address>`, `WLBINCOLLECTION_FORMACTION_NEXT=WLBINCOLLECTION_PAGE1_NAVBUTTONS` → 303 to `/bin-collections?...&fsn=<NEW>` → follow to get PAGE2 HTML
+- **PAGE2 data:** Base64-encoded JS variable `var WLBINCOLLECTIONFormData = "<base64>"` → decode → JSON → `PAGE2_1.COLLECTIONS` array with `binType`, `binName`, `nextCollectionISO` (ISO date string)
+- **Bin types:** `BLUE`, `GREY`, `BROWN`, `GREEN`
+- **Key implementation notes:**
+  - Must use a persistent cookie jar; every POST without the `goss-formsservice-clientid` cookie bounces to verifycookie
+  - `fsn` nonce changes on every response — always read from the latest redirect URL
+  - `ICALCONTENT` field is empty — calendar is generated client-side in JS; use `nextCollectionISO` instead
+  - Use `allow_redirects=False` on POSTs, capture `Location` header manually to get the new `fsn`
 
 ### Renfrewshire
 
