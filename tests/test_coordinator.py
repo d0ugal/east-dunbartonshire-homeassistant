@@ -9,6 +9,10 @@ from custom_components.scottish_bins.coordinator import (
     _parse_falkirk_json,
     _parse_falkirk_search,
     _parse_ics_collections,
+    _parse_north_ayrshire_attrs,
+    _parse_west_lothian_addresses,
+    _parse_west_lothian_form,
+    _parse_west_lothian_page2,
     format_east_dun_address,
 )
 
@@ -273,3 +277,168 @@ def test_parse_falkirk_json_bin_class_matches_type():
     results = _parse_falkirk_json(FALKIRK_JSON, date(2026, 4, 20))
     for r in results:
         assert r.bin_class == r.name
+
+
+# ---------------------------------------------------------------------------
+# North Ayrshire — ArcGIS attribute parser
+# ---------------------------------------------------------------------------
+
+
+def test_parse_north_ayrshire_attrs_all_bins():
+    attrs = {
+        "BLUE_DATE_TEXT": "21/04/2026",
+        "GREY_DATE_TEXT": "28/04/2026",
+        "PURPLE_DATE_TEXT": "05/05/2026",
+        "BROWN_DATE_TEXT": "12/05/2026",
+    }
+    results = _parse_north_ayrshire_attrs(attrs)
+    assert len(results) == 4
+
+
+def test_parse_north_ayrshire_attrs_dates():
+    attrs = {
+        "BLUE_DATE_TEXT": "21/04/2026",
+        "GREY_DATE_TEXT": "28/04/2026",
+    }
+    results = _parse_north_ayrshire_attrs(attrs)
+    by_class = {r.bin_class: r.next_date for r in results}
+    assert by_class["blue_bin"] == date(2026, 4, 21)
+    assert by_class["grey_bin"] == date(2026, 4, 28)
+
+
+def test_parse_north_ayrshire_attrs_missing_field_skipped():
+    results = _parse_north_ayrshire_attrs({"BLUE_DATE_TEXT": "21/04/2026"})
+    assert len(results) == 1
+    assert results[0].bin_class == "blue_bin"
+
+
+def test_parse_north_ayrshire_attrs_bad_date_skipped():
+    results = _parse_north_ayrshire_attrs({"BLUE_DATE_TEXT": "not-a-date"})
+    assert results == []
+
+
+def test_parse_north_ayrshire_attrs_empty():
+    assert _parse_north_ayrshire_attrs({}) == []
+
+
+# ---------------------------------------------------------------------------
+# West Lothian — address list parser
+# ---------------------------------------------------------------------------
+
+
+def test_parse_west_lothian_addresses_formats_correctly():
+    results = _parse_west_lothian_addresses([
+        {"udprn": "12345", "line1": "1 Main Street", "town": "Livingston", "postcode": "EH54 5AA"},
+    ])
+    assert len(results) == 1
+    assert results[0] == ("12345", "1 Main Street, Livingston, EH54 5AA")
+
+
+def test_parse_west_lothian_addresses_skips_empty_udprn():
+    results = _parse_west_lothian_addresses([
+        {"udprn": "", "line1": "Flat 1", "town": "Bathgate", "postcode": "EH48 1AA"},
+    ])
+    assert results == []
+
+
+def test_parse_west_lothian_addresses_empty_list():
+    assert _parse_west_lothian_addresses([]) == []
+
+
+def test_parse_west_lothian_addresses_multiple():
+    results = _parse_west_lothian_addresses([
+        {"udprn": "1", "line1": "1 Road", "town": "Town", "postcode": "EH1 1AA"},
+        {"udprn": "2", "line1": "2 Road", "town": "Town", "postcode": "EH1 1AB"},
+    ])
+    assert len(results) == 2
+    assert results[0][0] == "1"
+    assert results[1][0] == "2"
+
+
+# ---------------------------------------------------------------------------
+# West Lothian — form parser
+# ---------------------------------------------------------------------------
+
+WEST_LOTHIAN_FORM_HTML = """
+<html><body>
+<form method="post"
+      action="/apiserver/formsservice/http/processsubmission?pageSessionId=aaa&amp;fsid=bbb&amp;fsn=ccc">
+<input type="hidden" name="WLBINCOLLECTION_PAGENAME" value="PAGE1" />
+<input type="hidden" name="WLBINCOLLECTION_PAGESESSIONID" value="aaa" />
+<input type="hidden" name="WLBINCOLLECTION_NONCE" value="ccc" />
+<input type="hidden" name="WLBINCOLLECTION_PAGE1_UPRN" value="" />
+</form>
+</body></html>
+"""
+
+
+def test_parse_west_lothian_form_action_url():
+    _, action_url = _parse_west_lothian_form(WEST_LOTHIAN_FORM_HTML)
+    assert "processsubmission" in action_url
+    assert "pageSessionId=aaa" in action_url
+    assert "fsid=bbb" in action_url
+    assert "fsn=ccc" in action_url
+    assert "&amp;" not in action_url  # HTML entities must be unescaped
+
+
+def test_parse_west_lothian_form_extracts_fields():
+    form_data, _ = _parse_west_lothian_form(WEST_LOTHIAN_FORM_HTML)
+    assert form_data["WLBINCOLLECTION_PAGENAME"] == "PAGE1"
+    assert form_data["WLBINCOLLECTION_PAGESESSIONID"] == "aaa"
+    assert form_data["WLBINCOLLECTION_NONCE"] == "ccc"
+
+
+def test_parse_west_lothian_form_empty_html():
+    form_data, action_url = _parse_west_lothian_form("<html></html>")
+    assert form_data == {}
+    assert action_url == "https://www.westlothian.gov.uk/bin-collections"
+
+
+# ---------------------------------------------------------------------------
+# West Lothian — PAGE2 parser
+# ---------------------------------------------------------------------------
+
+import base64
+import json as json_mod
+
+
+def _make_wl_page2(collections: list[dict]) -> str:
+    payload = {"PAGE2_1": {"COLLECTIONS": collections}}
+    encoded = base64.b64encode(json_mod.dumps(payload).encode()).decode()
+    return f'<script>var WLBINCOLLECTIONFormData = "{encoded}";</script>'
+
+
+def test_parse_west_lothian_page2_basic():
+    html = _make_wl_page2([
+        {"binType": "BLUE", "binName": "Blue bin", "nextCollectionISO": "2026-04-21"},
+        {"binType": "GREY", "binName": "Grey bin", "nextCollectionISO": "2026-04-28"},
+    ])
+    results = _parse_west_lothian_page2(html)
+    assert len(results) == 2
+    by_type = {r.bin_class: r.next_date for r in results}
+    assert by_type["BLUE"] == date(2026, 4, 21)
+    assert by_type["GREY"] == date(2026, 4, 28)
+
+
+def test_parse_west_lothian_page2_uses_bin_name():
+    html = _make_wl_page2([
+        {"binType": "BLUE", "binName": "Blue Recycling Bin", "nextCollectionISO": "2026-04-21"},
+    ])
+    results = _parse_west_lothian_page2(html)
+    assert results[0].name == "Blue Recycling Bin"
+
+
+def test_parse_west_lothian_page2_skips_bad_date():
+    html = _make_wl_page2([
+        {"binType": "BLUE", "binName": "Blue bin", "nextCollectionISO": "not-a-date"},
+    ])
+    assert _parse_west_lothian_page2(html) == []
+
+
+def test_parse_west_lothian_page2_no_data_var():
+    assert _parse_west_lothian_page2("<html>no data here</html>") == []
+
+
+def test_parse_west_lothian_page2_empty_collections():
+    html = _make_wl_page2([])
+    assert _parse_west_lothian_page2(html) == []

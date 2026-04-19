@@ -26,6 +26,8 @@ from .const import (
     COUNCIL_CLACKMANNANSHIRE,
     COUNCIL_EAST_DUNBARTONSHIRE,
     COUNCIL_FALKIRK,
+    COUNCIL_NORTH_AYRSHIRE,
+    COUNCIL_WEST_LOTHIAN,
     COUNCILS,
     DOMAIN,
 )
@@ -33,6 +35,8 @@ from .coordinator import (
     fetch_clackmannanshire_properties,
     fetch_east_dunbartonshire_uprns,
     fetch_falkirk_properties,
+    fetch_north_ayrshire_uprns,
+    fetch_west_lothian_properties,
     format_east_dun_address,
 )
 
@@ -101,6 +105,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await fetch_clackmannanshire_properties(session, query)
         if self._council == COUNCIL_FALKIRK:
             return await fetch_falkirk_properties(session, query)
+        if self._council == COUNCIL_NORTH_AYRSHIRE:
+            return await fetch_north_ayrshire_uprns(session, query)
+        if self._council == COUNCIL_WEST_LOTHIAN:
+            return await fetch_west_lothian_properties(session, query)
         return []
 
     async def async_step_select_uprn(self, user_input: dict[str, Any] | None = None) -> FlowResult:

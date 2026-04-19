@@ -6,9 +6,11 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for Scotti
 
 | Council | Status |
 |---------|--------|
-| East Dunbartonshire | Supported |
 | Clackmannanshire | Supported |
+| East Dunbartonshire | Supported |
 | Falkirk | Supported |
+| North Ayrshire | Supported |
+| West Lothian | Supported |
 | Aberdeen City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/3) |
 | Aberdeenshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/11) |
 | Angus | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/9) |

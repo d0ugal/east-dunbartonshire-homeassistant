@@ -42,7 +42,7 @@ Technical notes on each council's bin collection website, for contributors addin
 
 ### North Ayrshire
 
-- **Status:** Not implemented — excellent candidate (clean ArcGIS API)
+- **Status:** Implemented
 - **Address search:** `GET https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/CAG_VIEW/MapServer/0/query?where=UPPER(ADDRESS) LIKE UPPER('%<query>%')&outFields=ADDRESS,UPRN&orderByFields=ADDRESS ASC&returnGeometry=false&f=json`
   - Returns array of features with `attributes.ADDRESS` and `attributes.UPRN` (12-digit zero-padded, e.g. `000126025453`)
 - **Collection data:** `GET https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/YourLocationLive/MapServer/8/query?where=UPRN='<uprn_stripped>'&outFields=*&f=json`
@@ -52,7 +52,7 @@ Technical notes on each council's bin collection website, for contributors addin
 
 ### West Lothian
 
-- **Status:** Not implemented — good candidate (GOSSForms, complex but fully server-rendered)
+- **Status:** Implemented (GOSSForms — same platform as East Renfrewshire)
 - **Approach:** GOSSForms (GOSS Interactive CMS); 5-network-request flow using `aiohttp.ClientSession` with a cookie jar
 - **Flow:**
   1. `GET https://www.westlothian.gov.uk/bin-collections` → extract `pageSessionId`, `fsid`, `fsn` UUIDs from form hidden fields

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import html as html_lib
+import json
 import logging
 import re
 from dataclasses import dataclass
@@ -18,6 +21,8 @@ from .const import (
     COUNCIL_CLACKMANNANSHIRE,
     COUNCIL_EAST_DUNBARTONSHIRE,
     COUNCIL_FALKIRK,
+    COUNCIL_NORTH_AYRSHIRE,
+    COUNCIL_WEST_LOTHIAN,
     DOMAIN,
 )
 
@@ -34,6 +39,17 @@ CLACKS_SEARCH_URL = f"{CLACKS_BASE_URL}/environment/wastecollection/"
 
 FALKIRK_SEARCH_URL = "https://recycling.falkirk.gov.uk/search/"
 FALKIRK_API_URL = "https://recycling.falkirk.gov.uk/api/collections/"
+
+NORTH_AYRSHIRE_ADDRESS_URL = (
+    "https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/CAG_VIEW/MapServer/0/query"
+)
+NORTH_AYRSHIRE_BINS_URL = (
+    "https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/YourLocationLive/MapServer/8/query"
+)
+
+WEST_LOTHIAN_BASE_URL = "https://www.westlothian.gov.uk"
+WEST_LOTHIAN_BIN_URL = f"{WEST_LOTHIAN_BASE_URL}/bin-collections"
+WEST_LOTHIAN_POSTCODE_URL = f"{WEST_LOTHIAN_BASE_URL}/apiserver/postcode"
 
 
 @dataclass
@@ -65,6 +81,10 @@ class ScottishBinsCoordinator(DataUpdateCoordinator[list[BinCollection]]):
                 return await _fetch_clackmannanshire(self.session, property_id)
             if council == COUNCIL_FALKIRK:
                 return await _fetch_falkirk(self.session, property_id)
+            if council == COUNCIL_NORTH_AYRSHIRE:
+                return await _fetch_north_ayrshire(self.session, property_id)
+            if council == COUNCIL_WEST_LOTHIAN:
+                return await _fetch_west_lothian(self.session, property_id)
         except Exception as err:
             raise UpdateFailed(f"Error fetching bin collections: {err}") from err
 
@@ -244,3 +264,163 @@ def _parse_falkirk_json(data: dict, today: date) -> list[BinCollection]:
                 )
             )
     return collections
+
+
+# ---------------------------------------------------------------------------
+# North Ayrshire
+# ---------------------------------------------------------------------------
+
+
+async def fetch_north_ayrshire_uprns(session, query: str) -> list[tuple[str, str]]:
+    """Search by postcode or address; returns [(uprn, display_name)]."""
+    params = {
+        "where": f"UPPER(ADDRESS) LIKE UPPER('%{query}%')",
+        "outFields": "ADDRESS,UPRN",
+        "orderByFields": "ADDRESS ASC",
+        "returnGeometry": "false",
+        "f": "json",
+    }
+    async with session.get(NORTH_AYRSHIRE_ADDRESS_URL, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+    features = data.get("features", [])
+    return [(str(f["attributes"]["UPRN"]), f["attributes"]["ADDRESS"]) for f in features]
+
+
+async def _fetch_north_ayrshire(session, uprn: str) -> list[BinCollection]:
+    params = {
+        "where": f"UPRN='{uprn.lstrip('0')}'",
+        "outFields": "*",
+        "f": "json",
+    }
+    async with session.get(NORTH_AYRSHIRE_BINS_URL, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+    features = data.get("features", [])
+    if not features:
+        return []
+    return _parse_north_ayrshire_attrs(features[0]["attributes"])
+
+
+def _parse_north_ayrshire_attrs(attrs: dict) -> list[BinCollection]:
+    fields = [
+        ("BLUE_DATE_TEXT", "blue_bin", "Blue bin"),
+        ("GREY_DATE_TEXT", "grey_bin", "Grey bin"),
+        ("PURPLE_DATE_TEXT", "purple_bin", "Purple bin"),
+        ("BROWN_DATE_TEXT", "brown_bin", "Brown bin"),
+    ]
+    collections = []
+    for field, bin_class, name in fields:
+        date_str = attrs.get(field)
+        if not date_str:
+            continue
+        try:
+            next_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+            collections.append(BinCollection(bin_class=bin_class, name=name, next_date=next_date))
+        except ValueError:
+            _LOGGER.warning("Could not parse North Ayrshire date: %s", date_str)
+    return collections
+
+
+# ---------------------------------------------------------------------------
+# West Lothian
+# ---------------------------------------------------------------------------
+
+
+async def fetch_west_lothian_properties(session, postcode: str) -> list[tuple[str, str]]:
+    """Search by postcode; returns [(udprn, display_name)]."""
+    params = {
+        "jsonrpc": json.dumps(
+            {"id": 1, "method": "postcodeSearch", "params": {"provider": "EndPoint", "postcode": postcode}}
+        ),
+        "callback": "cb",
+    }
+    async with session.get(WEST_LOTHIAN_POSTCODE_URL, params=params) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+    match = re.search(r"cb\((.*)\)", text, re.DOTALL)
+    if not match:
+        return []
+    results = json.loads(match.group(1))
+    return _parse_west_lothian_addresses(results)
+
+
+def _parse_west_lothian_addresses(results: list[dict]) -> list[tuple[str, str]]:
+    output = []
+    for item in results:
+        udprn = str(item.get("udprn", ""))
+        parts = [item.get(f"line{i}", "") for i in range(1, 6)]
+        parts.extend([item.get("town", ""), item.get("postcode", "")])
+        address = ", ".join(p for p in parts if p)
+        if udprn:
+            output.append((udprn, address))
+    return output
+
+
+async def _fetch_west_lothian(session, uprn: str) -> list[BinCollection]:
+    # Step 1: GET form page to extract session tokens
+    async with session.get(WEST_LOTHIAN_BIN_URL) as resp:
+        resp.raise_for_status()
+        html = await resp.text()
+    form_data, action_url = _parse_west_lothian_form(html)
+
+    # Step 2+3: POST triggers the GOSSForms cookie challenge (303 → verifycookie → 303 → form).
+    # aiohttp follows all redirects automatically and the session jar captures the cookie.
+    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+        resp.raise_for_status()
+        html = await resp.text()
+
+    # Step 4: Re-parse the form — the nonce (fsn) has rotated after the cookie dance.
+    form_data, action_url = _parse_west_lothian_form(html)
+    form_data["WLBINCOLLECTION_PAGE1_UPRN"] = uprn
+    form_data["WLBINCOLLECTION_FORMACTION_NEXT"] = "WLBINCOLLECTION_PAGE1_NAVBUTTONS"
+
+    # Step 5: Submit PAGE1 with the chosen UPRN to get PAGE2 collection data.
+    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+        resp.raise_for_status()
+        page2_html = await resp.text()
+
+    return _parse_west_lothian_page2(page2_html)
+
+
+def _parse_west_lothian_form(html: str) -> tuple[dict, str]:
+    action_match = re.search(
+        r'action="(/apiserver/formsservice/http/processsubmission[^"]+)"', html
+    )
+    action_url = (
+        WEST_LOTHIAN_BASE_URL + html_lib.unescape(action_match.group(1))
+        if action_match
+        else WEST_LOTHIAN_BIN_URL
+    )
+
+    form_data: dict[str, str] = {}
+    for tag in re.findall(r"<input[^>]+>", html, re.DOTALL):
+        name_m = re.search(r'name="([^"]+)"', tag)
+        value_m = re.search(r'value="([^"]*)"', tag)
+        if name_m and name_m.group(1).startswith("WLBINCOLLECTION_"):
+            form_data[name_m.group(1)] = value_m.group(1) if value_m else ""
+
+    return form_data, action_url
+
+
+def _parse_west_lothian_page2(html: str) -> list[BinCollection]:
+    match = re.search(r'var WLBINCOLLECTIONFormData\s*=\s*"([^"]+)"', html)
+    if not match:
+        _LOGGER.warning("West Lothian: could not find WLBINCOLLECTIONFormData in PAGE2")
+        return []
+
+    data = json.loads(base64.b64decode(match.group(1)).decode())
+    collections_data = data.get("PAGE2_1", {}).get("COLLECTIONS", [])
+
+    result = []
+    for item in collections_data:
+        bin_type = item.get("binType", "")
+        iso_date = item.get("nextCollectionISO", "")
+        bin_name = item.get("binName", bin_type)
+        if not (bin_type and iso_date):
+            continue
+        try:
+            result.append(BinCollection(bin_class=bin_type, name=bin_name, next_date=date.fromisoformat(iso_date)))
+        except ValueError:
+            _LOGGER.warning("Could not parse West Lothian date: %s", iso_date)
+    return result
