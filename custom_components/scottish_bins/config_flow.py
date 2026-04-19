@@ -39,9 +39,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._council: str | None = None
         self._uprn_options: dict[str, str] = {}
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
             self._council = user_input[CONF_COUNCIL]
             return await self.async_step_address()
@@ -50,10 +48,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_COUNCIL): SelectSelector(
                     SelectSelectorConfig(
-                        options=[
-                            SelectOptionDict(value=k, label=v)
-                            for k, v in COUNCILS.items()
-                        ],
+                        options=[SelectOptionDict(value=k, label=v) for k, v in COUNCILS.items()],
                         mode=SelectSelectorMode.LIST,
                     )
                 )
@@ -61,9 +56,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="user", data_schema=schema)
 
-    async def async_step_address(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_address(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -74,9 +67,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not results:
                     errors["base"] = "no_results"
                 else:
-                    self._uprn_options = {
-                        item["uprn"]: _format_address(item) for item in results
-                    }
+                    self._uprn_options = {item["uprn"]: _format_address(item) for item in results}
                     return await self.async_step_select_uprn()
             except Exception:
                 _LOGGER.exception("Error looking up address")
@@ -95,9 +86,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_select_uprn(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_select_uprn(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
             uprn = user_input[CONF_UPRN]
             address = self._uprn_options[uprn]
@@ -113,8 +102,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         options = [
-            SelectOptionDict(value=uprn, label=addr)
-            for uprn, addr in self._uprn_options.items()
+            SelectOptionDict(value=uprn, label=addr) for uprn, addr in self._uprn_options.items()
         ]
         schema = vol.Schema(
             {
