@@ -25,12 +25,14 @@ from .const import (
     CONF_UPRN,
     COUNCIL_CLACKMANNANSHIRE,
     COUNCIL_EAST_DUNBARTONSHIRE,
+    COUNCIL_FALKIRK,
     COUNCILS,
     DOMAIN,
 )
 from .coordinator import (
     fetch_clackmannanshire_properties,
     fetch_east_dunbartonshire_uprns,
+    fetch_falkirk_properties,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -103,6 +105,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return [(item["uprn"], _format_east_dun_address(item)) for item in results]
         if self._council == COUNCIL_CLACKMANNANSHIRE:
             return await fetch_clackmannanshire_properties(session, query)
+        if self._council == COUNCIL_FALKIRK:
+            return await fetch_falkirk_properties(session, query)
         return []
 
     async def async_step_select_uprn(self, user_input: dict[str, Any] | None = None) -> FlowResult:

@@ -17,6 +17,7 @@ from .const import (
     CONF_UPRN,
     COUNCIL_CLACKMANNANSHIRE,
     COUNCIL_EAST_DUNBARTONSHIRE,
+    COUNCIL_FALKIRK,
     DOMAIN,
 )
 
@@ -30,6 +31,9 @@ EAST_DUNBARTONSHIRE_UPRN_URL = "https://www.eastdunbarton.gov.uk/umbraco/api/bin
 
 CLACKS_BASE_URL = "https://www.clacks.gov.uk"
 CLACKS_SEARCH_URL = f"{CLACKS_BASE_URL}/environment/wastecollection/"
+
+FALKIRK_SEARCH_URL = "https://recycling.falkirk.gov.uk/search/"
+FALKIRK_API_URL = "https://recycling.falkirk.gov.uk/api/collections/"
 
 
 @dataclass
@@ -59,6 +63,8 @@ class ScottishBinsCoordinator(DataUpdateCoordinator[list[BinCollection]]):
                 return await _fetch_east_dunbartonshire(self.session, property_id)
             if council == COUNCIL_CLACKMANNANSHIRE:
                 return await _fetch_clackmannanshire(self.session, property_id)
+            if council == COUNCIL_FALKIRK:
+                return await _fetch_falkirk(self.session, property_id)
         except Exception as err:
             raise UpdateFailed(f"Error fetching bin collections: {err}") from err
 
@@ -180,5 +186,47 @@ def _parse_ics_collections(ics_text: str, today: date) -> list[BinCollection]:
                 continue
 
         collections.append(BinCollection(bin_class=summary, name=summary, next_date=current))
+
+    return collections
+
+
+# ---------------------------------------------------------------------------
+# Falkirk
+# ---------------------------------------------------------------------------
+
+
+async def fetch_falkirk_properties(session, query: str) -> list[tuple[str, str]]:
+    """Search by postcode or address; returns [(uprn, display_name)]."""
+    async with session.get(FALKIRK_SEARCH_URL, params={"query": query}) as resp:
+        resp.raise_for_status()
+        html = await resp.text()
+
+    matches = re.findall(
+        r'href="/collections/(\d+)">(.*?)</a>',
+        html,
+    )
+    return [(m[0], m[1].strip()) for m in matches]
+
+
+async def _fetch_falkirk(session, uprn: str) -> list[BinCollection]:
+    today = date.today()
+    async with session.get(f"{FALKIRK_API_URL}{uprn}", allow_redirects=True) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+
+    collections = []
+    for item in data.get("collections", []):
+        bin_type = item.get("type", "")
+        dates = [
+            date.fromisoformat(d) for d in item.get("dates", []) if date.fromisoformat(d) >= today
+        ]
+        if dates:
+            collections.append(
+                BinCollection(
+                    bin_class=bin_type,
+                    name=bin_type,
+                    next_date=min(dates),
+                )
+            )
 
     return collections

@@ -4,13 +4,43 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for Scotti
 
 ## Supported Councils
 
-Currently supported:
+| Council | Status |
+|---------|--------|
+| East Dunbartonshire | Supported |
+| Clackmannanshire | Supported |
+| Falkirk | Supported |
+| Aberdeen City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/3) |
+| Aberdeenshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/11) |
+| Angus | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/9) |
+| Argyll and Bute | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/10) |
+| City of Edinburgh | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/6) |
+| Comhairle nan Eilean Siar (Western Isles) | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/15) |
+| Dumfries and Galloway | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/12) |
+| Dundee City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/14) |
+| East Ayrshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/13) |
+| East Lothian | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/19) |
+| East Renfrewshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/18) |
+| Fife | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/4) |
+| Glasgow City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/2) |
+| Highland | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/7) |
+| Inverclyde | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/16) |
+| Midlothian | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/23) |
+| Moray | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/22) |
+| North Ayrshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/20) |
+| Orkney Islands | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/21) |
+| Perth and Kinross | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/24) |
+| Renfrewshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/27) |
+| Scottish Borders | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/25) |
+| Shetland Islands | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/26) |
+| South Ayrshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/28) |
+| South Lanarkshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/5) |
+| Stirling | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/31) |
+| West Dunbartonshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/30) |
+| West Lothian | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/29) |
+| North Lanarkshire | Not yet investigated |
+| Perth and Kinross | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/24) |
 
-- **East Dunbartonshire** - full support for food caddy, green bin, and grey bin schedules
-
-### Other Councils
-
-Only East Dunbartonshire is supported right now. If you'd like support for your council, please [open an issue](https://github.com/d0ugal/scottish-bins-homeassistant/issues) with a link to your council's bin collection website. We'll investigate and add support where the data is accessible.
+Upvoting an issue (👍 on the first comment) helps us prioritise which councils to add next.
 
 ## Installation
 
