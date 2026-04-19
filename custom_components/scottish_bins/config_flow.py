@@ -19,13 +19,24 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from .const import CONF_ADDRESS, CONF_COUNCIL, CONF_UPRN, COUNCILS, DOMAIN
-from .coordinator import fetch_east_dunbartonshire_uprns
+from .const import (
+    CONF_ADDRESS,
+    CONF_COUNCIL,
+    CONF_UPRN,
+    COUNCIL_CLACKMANNANSHIRE,
+    COUNCIL_EAST_DUNBARTONSHIRE,
+    COUNCILS,
+    DOMAIN,
+)
+from .coordinator import (
+    fetch_clackmannanshire_properties,
+    fetch_east_dunbartonshire_uprns,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _format_address(item: dict) -> str:
+def _format_east_dun_address(item: dict) -> str:
     parts = [item.get("addressLine1", ""), item.get("town", "")]
     if item.get("postcode"):
         parts.append(item["postcode"])
@@ -37,7 +48,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._council: str | None = None
-        self._uprn_options: dict[str, str] = {}
+        self._property_options: dict[str, str] = {}
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
@@ -60,14 +71,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            address = user_input[CONF_ADDRESS]
+            query = user_input[CONF_ADDRESS]
             try:
                 session = async_get_clientsession(self.hass)
-                results = await fetch_east_dunbartonshire_uprns(session, address)
-                if not results:
+                options = await self._search_properties(session, query)
+                if not options:
                     errors["base"] = "no_results"
                 else:
-                    self._uprn_options = {item["uprn"]: _format_address(item) for item in results}
+                    self._property_options = dict(options)
                     return await self.async_step_select_uprn()
             except Exception:
                 _LOGGER.exception("Error looking up address")
@@ -86,10 +97,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def _search_properties(self, session, query: str) -> list[tuple[str, str]]:
+        if self._council == COUNCIL_EAST_DUNBARTONSHIRE:
+            results = await fetch_east_dunbartonshire_uprns(session, query)
+            return [(item["uprn"], _format_east_dun_address(item)) for item in results]
+        if self._council == COUNCIL_CLACKMANNANSHIRE:
+            return await fetch_clackmannanshire_properties(session, query)
+        return []
+
     async def async_step_select_uprn(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
             uprn = user_input[CONF_UPRN]
-            address = self._uprn_options[uprn]
+            address = self._property_options[uprn]
             await self.async_set_unique_id(f"{self._council}_{uprn}")
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
@@ -102,7 +121,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         options = [
-            SelectOptionDict(value=uprn, label=addr) for uprn, addr in self._uprn_options.items()
+            SelectOptionDict(value=pid, label=name) for pid, name in self._property_options.items()
         ]
         schema = vol.Schema(
             {
