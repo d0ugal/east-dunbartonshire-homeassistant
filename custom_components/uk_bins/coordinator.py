@@ -35,9 +35,7 @@ EAST_DUNBARTONSHIRE_URL = (
     "https://www.eastdunbarton.gov.uk/services/a-z-of-services/"
     "bins-waste-and-recycling/bins-and-recycling/collections/"
 )
-EAST_DUNBARTONSHIRE_UPRN_URL = (
-    "https://www.eastdunbarton.gov.uk/umbraco/api/bincollection/GetUPRNs"
-)
+EAST_DUNBARTONSHIRE_UPRN_URL = "https://www.eastdunbarton.gov.uk/umbraco/api/bincollection/GetUPRNs"
 
 CLACKS_BASE_URL = "https://www.clacks.gov.uk"
 CLACKS_SEARCH_URL = f"{CLACKS_BASE_URL}/environment/wastecollection/"
@@ -45,7 +43,9 @@ CLACKS_SEARCH_URL = f"{CLACKS_BASE_URL}/environment/wastecollection/"
 FALKIRK_SEARCH_URL = "https://recycling.falkirk.gov.uk/search/"
 FALKIRK_API_URL = "https://recycling.falkirk.gov.uk/api/collections/"
 
-NORTH_AYRSHIRE_ADDRESS_URL = "https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/CAG_VIEW/MapServer/0/query"
+NORTH_AYRSHIRE_ADDRESS_URL = (
+    "https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/CAG_VIEW/MapServer/0/query"
+)
 NORTH_AYRSHIRE_BINS_URL = "https://www.maps.north-ayrshire.gov.uk/arcgis/rest/services/AGOL/YourLocationLive/MapServer/8/query"
 
 WEST_LOTHIAN_BASE_URL = "https://www.westlothian.gov.uk"
@@ -56,9 +56,7 @@ EAST_RENFREWSHIRE_BASE_URL = "https://www.eastrenfrewshire.gov.uk"
 EAST_RENFREWSHIRE_BIN_URL = f"{EAST_RENFREWSHIRE_BASE_URL}/bin-day"
 
 SOUTH_AYRSHIRE_BASE_URL = "https://www.south-ayrshire.gov.uk"
-SOUTH_AYRSHIRE_BIN_URL = (
-    f"{SOUTH_AYRSHIRE_BASE_URL}/article/1619/Find-your-collection-days"
-)
+SOUTH_AYRSHIRE_BIN_URL = f"{SOUTH_AYRSHIRE_BASE_URL}/article/1619/Find-your-collection-days"
 
 # Some GOSSForms council sites reject requests without a browser-like User-Agent.
 _GOSS_HEADERS = {
@@ -104,9 +102,7 @@ class UkBinsCoordinator(DataUpdateCoordinator[list[BinCollection]]):
             if council == COUNCIL_WEST_LOTHIAN:
                 return await _fetch_west_lothian(self.session, property_id)
             if council == COUNCIL_EAST_RENFREWSHIRE:
-                return await _fetch_east_renfrewshire(
-                    self.session, property_id, address
-                )
+                return await _fetch_east_renfrewshire(self.session, property_id, address)
             if council == COUNCIL_SOUTH_AYRSHIRE:
                 return await _fetch_south_ayrshire(self.session, property_id, address)
         except Exception as err:
@@ -150,9 +146,7 @@ def _parse_east_dunbartonshire_html(html: str) -> list[BinCollection]:
 
 
 async def fetch_east_dunbartonshire_uprns(session, address: str) -> list[dict]:
-    async with session.get(
-        EAST_DUNBARTONSHIRE_UPRN_URL, params={"address": address}
-    ) as resp:
+    async with session.get(EAST_DUNBARTONSHIRE_UPRN_URL, params={"address": address}) as resp:
         resp.raise_for_status()
         return await resp.json()
 
@@ -169,9 +163,7 @@ def format_east_dun_address(item: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def fetch_clackmannanshire_properties(
-    session, postcode: str
-) -> list[tuple[str, str]]:
+async def fetch_clackmannanshire_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(property_id, display_name)]."""
     async with session.get(CLACKS_SEARCH_URL, params={"pc": postcode}) as resp:
         resp.raise_for_status()
@@ -196,9 +188,7 @@ async def _fetch_clackmannanshire(session, property_id: str) -> list[BinCollecti
     # Extract the primary ICS URL (first .ics link, which is the main calendar)
     ics_paths = re.findall(r'href="(/document/[^"]+\.ics)"', html)
     if not ics_paths:
-        _LOGGER.warning(
-            "No ICS calendar found for Clackmannanshire property %s", property_id
-        )
+        _LOGGER.warning("No ICS calendar found for Clackmannanshire property %s", property_id)
         return []
 
     ics_url = CLACKS_BASE_URL + ics_paths[0]
@@ -245,9 +235,7 @@ def _parse_ics_collections(ics_text: str, today: date) -> list[BinCollection]:
             if current < today:
                 continue
 
-        collections.append(
-            BinCollection(bin_class=summary, name=summary, next_date=current)
-        )
+        collections.append(BinCollection(bin_class=summary, name=summary, next_date=current))
 
     return collections
 
@@ -285,9 +273,7 @@ def _parse_falkirk_json(data: dict, today: date) -> list[BinCollection]:
     for item in data.get("collections", []):
         bin_type = item.get("type", "")
         dates = [
-            date.fromisoformat(d)
-            for d in item.get("dates", [])
-            if date.fromisoformat(d) >= today
+            date.fromisoformat(d) for d in item.get("dates", []) if date.fromisoformat(d) >= today
         ]
         if dates:
             collections.append(
@@ -318,9 +304,7 @@ async def fetch_north_ayrshire_uprns(session, query: str) -> list[tuple[str, str
         resp.raise_for_status()
         data = await resp.json()
     features = data.get("features", [])
-    return [
-        (str(f["attributes"]["UPRN"]), f["attributes"]["ADDRESS"]) for f in features
-    ]
+    return [(str(f["attributes"]["UPRN"]), f["attributes"]["ADDRESS"]) for f in features]
 
 
 async def _fetch_north_ayrshire(session, uprn: str) -> list[BinCollection]:
@@ -352,9 +336,7 @@ def _parse_north_ayrshire_attrs(attrs: dict) -> list[BinCollection]:
             continue
         try:
             next_date = datetime.strptime(date_str, "%d/%m/%Y").date()
-            collections.append(
-                BinCollection(bin_class=bin_class, name=name, next_date=next_date)
-            )
+            collections.append(BinCollection(bin_class=bin_class, name=name, next_date=next_date))
         except ValueError:
             _LOGGER.warning("Could not parse North Ayrshire date: %s", date_str)
     return collections
@@ -365,9 +347,7 @@ def _parse_north_ayrshire_attrs(attrs: dict) -> list[BinCollection]:
 # ---------------------------------------------------------------------------
 
 
-async def fetch_west_lothian_properties(
-    session, postcode: str
-) -> list[tuple[str, str]]:
+async def fetch_west_lothian_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(udprn, display_name)]."""
     params = {
         "jsonrpc": json.dumps(
@@ -429,17 +409,13 @@ async def _fetch_west_lothian(session, uprn: str) -> list[BinCollection]:
     return _parse_west_lothian_page2(page2_html)
 
 
-def _parse_goss_form(
-    html: str, base_url: str, fallback_url: str, prefix: str
-) -> tuple[dict, str]:
+def _parse_goss_form(html: str, base_url: str, fallback_url: str, prefix: str) -> tuple[dict, str]:
     """Extract hidden form fields and the action URL from a GOSSForms page."""
     action_match = re.search(
         r'action="(/apiserver/formsservice/http/processsubmission[^"]+)"', html
     )
     action_url = (
-        base_url + html_lib.unescape(action_match.group(1))
-        if action_match
-        else fallback_url
+        base_url + html_lib.unescape(action_match.group(1)) if action_match else fallback_url
     )
     form_data: dict[str, str] = {}
     for tag in re.findall(r"<input[^>]+>", html, re.DOTALL):
@@ -451,9 +427,7 @@ def _parse_goss_form(
 
 
 def _parse_west_lothian_form(html: str) -> tuple[dict, str]:
-    return _parse_goss_form(
-        html, WEST_LOTHIAN_BASE_URL, WEST_LOTHIAN_BIN_URL, "WLBINCOLLECTION_"
-    )
+    return _parse_goss_form(html, WEST_LOTHIAN_BASE_URL, WEST_LOTHIAN_BIN_URL, "WLBINCOLLECTION_")
 
 
 def _parse_west_lothian_page2(html: str) -> list[BinCollection]:
@@ -500,9 +474,7 @@ def _extract_uk_postcode(address: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 
-async def fetch_east_renfrewshire_properties(
-    session, postcode: str
-) -> list[tuple[str, str]]:
+async def fetch_east_renfrewshire_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(uprn, display_name)]."""
     async with session.get(EAST_RENFREWSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
@@ -546,21 +518,13 @@ def _parse_east_renfrewshire_page2(html: str) -> list[tuple[str, str]]:
         select_match.group(1),
         re.DOTALL,
     )
-    return [
-        (v.strip(), html_lib.unescape(label.strip()))
-        for v, label in options
-        if v.strip()
-    ]
+    return [(v.strip(), html_lib.unescape(label.strip())) for v, label in options if v.strip()]
 
 
-async def _fetch_east_renfrewshire(
-    session, uprn: str, address: str
-) -> list[BinCollection]:
+async def _fetch_east_renfrewshire(session, uprn: str, address: str) -> list[BinCollection]:
     postcode = _extract_uk_postcode(address)
     if not postcode:
-        _LOGGER.warning(
-            "Could not extract postcode from East Renfrewshire address: %s", address
-        )
+        _LOGGER.warning("Could not extract postcode from East Renfrewshire address: %s", address)
         return []
 
     async with session.get(EAST_RENFREWSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
@@ -606,9 +570,7 @@ async def _fetch_east_renfrewshire(
 def _parse_east_renfrewshire_results(html: str) -> list[BinCollection]:
     match = re.search(r'var BINDAYSV2FormData\s*=\s*"([^"]+)"', html)
     if not match:
-        _LOGGER.warning(
-            "East Renfrewshire: could not find BINDAYSV2FormData in results"
-        )
+        _LOGGER.warning("East Renfrewshire: could not find BINDAYSV2FormData in results")
         return []
     data = json.loads(base64.b64decode(match.group(1)).decode())
     table_html = data.get("RESULTS_1", {}).get("NEXTCOLLECTIONLISTV4", "")
@@ -632,9 +594,7 @@ def _parse_east_renfrewshire_table(table_html: str) -> list[BinCollection]:
             bin_class = alt_text.replace(" icon", "").strip()
             if bin_class:
                 collections.append(
-                    BinCollection(
-                        bin_class=bin_class, name=bin_class, next_date=next_date
-                    )
+                    BinCollection(bin_class=bin_class, name=bin_class, next_date=next_date)
                 )
     return collections
 
@@ -644,9 +604,7 @@ def _parse_east_renfrewshire_table(table_html: str) -> list[BinCollection]:
 # ---------------------------------------------------------------------------
 
 
-async def fetch_south_ayrshire_properties(
-    session, postcode: str
-) -> list[tuple[str, str]]:
+async def fetch_south_ayrshire_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(uprn, display_name)]."""
     async with session.get(SOUTH_AYRSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
@@ -689,21 +647,13 @@ def _parse_south_ayrshire_page2(html: str) -> list[tuple[str, str]]:
         select_match.group(1),
         re.DOTALL,
     )
-    return [
-        (v.strip(), html_lib.unescape(label.strip()))
-        for v, label in options
-        if v.strip()
-    ]
+    return [(v.strip(), html_lib.unescape(label.strip())) for v, label in options if v.strip()]
 
 
-async def _fetch_south_ayrshire(
-    session, uprn: str, address: str
-) -> list[BinCollection]:
+async def _fetch_south_ayrshire(session, uprn: str, address: str) -> list[BinCollection]:
     postcode = _extract_uk_postcode(address)
     if not postcode:
-        _LOGGER.warning(
-            "Could not extract postcode from South Ayrshire address: %s", address
-        )
+        _LOGGER.warning("Could not extract postcode from South Ayrshire address: %s", address)
         return []
 
     async with session.get(SOUTH_AYRSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
@@ -746,9 +696,7 @@ async def _fetch_south_ayrshire(
     return _parse_south_ayrshire_page3(page3_html)
 
 
-def _parse_south_ayrshire_page3(
-    html: str, today: date | None = None
-) -> list[BinCollection]:
+def _parse_south_ayrshire_page3(html: str, today: date | None = None) -> list[BinCollection]:
     if today is None:
         today = date.today()
     match = re.search(r'var BINDAYSFormData\s*=\s*"([^"]+)"', html)
@@ -775,9 +723,7 @@ def _parse_south_ayrshire_page3(
             if not (bin_name and bin_date_str):
                 continue
             try:
-                next_date = datetime.fromisoformat(
-                    bin_date_str.replace("Z", "+00:00")
-                ).date()
+                next_date = datetime.fromisoformat(bin_date_str.replace("Z", "+00:00")).date()
                 if next_date >= today and (
                     bin_name not in earliest or next_date < earliest[bin_name]
                 ):
