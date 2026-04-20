@@ -1,0 +1,53 @@
+name: Integration Tests
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Run integration tests
+        id: tests
+        run: uv run --extra integration pytest tests/integration/ -v
+
+      - name: Open issue on failure
+        if: failure() && steps.tests.outcome == 'failure' && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Ensure label exists
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'integration-failure',
+                color: 'd93f0b',
+              });
+            } catch (e) {
+              if (!e.message.includes('already_exists')) throw e;
+            }
+
+            // Only open one issue at a time — don't spam if already open
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'integration-failure',
+              state: 'open',
+            });
+            if (existing.data.length > 0) return;
+
+            const date = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Integration tests failed (${date})`,
+              body: `One or more council integrations are broken. Check the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.\n\nThis issue was opened automatically by the daily integration test run.`,
+              labels: ['integration-failure'],
+            });
