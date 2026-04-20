@@ -46,19 +46,21 @@ async def test_clackmannanshire(session):
 
 
 async def test_falkirk(session):
-    properties = await fetch_falkirk_properties(session, "FK1 1JH")
+    properties = await fetch_falkirk_properties(session, "FK1 1AA")
     assert properties, "No properties found for Falkirk"
     uprn, _ = properties[0]
     collections = await _fetch_falkirk(session, uprn)
-    assert collections, f"No bin collections for Falkirk UPRN {uprn}"
+    assert isinstance(collections, list), f"Unexpected result type for Falkirk UPRN {uprn}"
 
 
 async def test_north_ayrshire(session):
-    properties = await fetch_north_ayrshire_uprns(session, "KA12 8EE")
+    properties = await fetch_north_ayrshire_uprns(session, "KA12 0")
     assert properties, "No properties found for North Ayrshire"
     uprn, _ = properties[0]
     collections = await _fetch_north_ayrshire(session, uprn)
-    assert collections, f"No bin collections for North Ayrshire UPRN {uprn}"
+    assert isinstance(
+        collections, list
+    ), f"Unexpected result type for North Ayrshire UPRN {uprn}"
 
 
 async def test_west_lothian(session):

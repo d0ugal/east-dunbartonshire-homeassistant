@@ -58,6 +58,14 @@ EAST_RENFREWSHIRE_BIN_URL = f"{EAST_RENFREWSHIRE_BASE_URL}/bin-day"
 SOUTH_AYRSHIRE_BASE_URL = "https://www.south-ayrshire.gov.uk"
 SOUTH_AYRSHIRE_BIN_URL = f"{SOUTH_AYRSHIRE_BASE_URL}/article/1619/Find-your-collection-days"
 
+# Some GOSSForms council sites reject requests without a browser-like User-Agent.
+_GOSS_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    )
+}
+
 
 @dataclass
 class BinCollection:
@@ -357,7 +365,9 @@ async def fetch_west_lothian_properties(session, postcode: str) -> list[tuple[st
     match = re.search(r"cb\((.*)\)", text, re.DOTALL)
     if not match:
         return []
-    results = json.loads(match.group(1))
+    # Response is a JSON-RPC envelope: {"id":1,"jsonrpc":"2.0","result":[...]}
+    data = json.loads(match.group(1))
+    results = data.get("result", []) if isinstance(data, dict) else data
     return _parse_west_lothian_addresses(results)
 
 
@@ -466,7 +476,7 @@ def _extract_uk_postcode(address: str) -> str | None:
 
 async def fetch_east_renfrewshire_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(uprn, display_name)]."""
-    async with session.get(EAST_RENFREWSHIRE_BIN_URL) as resp:
+    async with session.get(EAST_RENFREWSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
         html = await resp.text()
     form_data, action_url = _parse_goss_form(
@@ -474,7 +484,9 @@ async def fetch_east_renfrewshire_properties(session, postcode: str) -> list[tup
     )
 
     # Trigger cookie challenge
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         html = await resp.text()
 
@@ -484,7 +496,9 @@ async def fetch_east_renfrewshire_properties(session, postcode: str) -> list[tup
     form_data["BINDAYSV2_PAGE1_POSTCODE"] = postcode
     form_data["BINDAYSV2_FORMACTION_NEXT"] = "BINDAYSV2_PAGE1_FIELD290"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         page2_html = await resp.text()
 
@@ -513,14 +527,16 @@ async def _fetch_east_renfrewshire(session, uprn: str, address: str) -> list[Bin
         _LOGGER.warning("Could not extract postcode from East Renfrewshire address: %s", address)
         return []
 
-    async with session.get(EAST_RENFREWSHIRE_BIN_URL) as resp:
+    async with session.get(EAST_RENFREWSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
         html = await resp.text()
     form_data, action_url = _parse_goss_form(
         html, EAST_RENFREWSHIRE_BASE_URL, EAST_RENFREWSHIRE_BIN_URL, "BINDAYSV2_"
     )
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         html = await resp.text()
 
@@ -530,7 +546,9 @@ async def _fetch_east_renfrewshire(session, uprn: str, address: str) -> list[Bin
     form_data["BINDAYSV2_PAGE1_POSTCODE"] = postcode
     form_data["BINDAYSV2_FORMACTION_NEXT"] = "BINDAYSV2_PAGE1_FIELD290"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         page2_html = await resp.text()
 
@@ -540,7 +558,9 @@ async def _fetch_east_renfrewshire(session, uprn: str, address: str) -> list[Bin
     form_data["BINDAYSV2_PAGE2_UPRN"] = uprn
     form_data["BINDAYSV2_FORMACTION_NEXT"] = "BINDAYSV2_PAGE2_FIELD294"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         results_html = await resp.text()
 
@@ -586,14 +606,16 @@ def _parse_east_renfrewshire_table(table_html: str) -> list[BinCollection]:
 
 async def fetch_south_ayrshire_properties(session, postcode: str) -> list[tuple[str, str]]:
     """Search by postcode; returns [(uprn, display_name)]."""
-    async with session.get(SOUTH_AYRSHIRE_BIN_URL) as resp:
+    async with session.get(SOUTH_AYRSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
         html = await resp.text()
     form_data, action_url = _parse_goss_form(
         html, SOUTH_AYRSHIRE_BASE_URL, SOUTH_AYRSHIRE_BIN_URL, "BINDAYS_"
     )
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         html = await resp.text()
 
@@ -603,7 +625,9 @@ async def fetch_south_ayrshire_properties(session, postcode: str) -> list[tuple[
     form_data["BINDAYS_PAGE1_POSTCODE"] = postcode
     form_data["BINDAYS_FORMACTION_NEXT"] = "BINDAYS_PAGE1_WIZBUTTON"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         page2_html = await resp.text()
 
@@ -632,14 +656,16 @@ async def _fetch_south_ayrshire(session, uprn: str, address: str) -> list[BinCol
         _LOGGER.warning("Could not extract postcode from South Ayrshire address: %s", address)
         return []
 
-    async with session.get(SOUTH_AYRSHIRE_BIN_URL) as resp:
+    async with session.get(SOUTH_AYRSHIRE_BIN_URL, headers=_GOSS_HEADERS) as resp:
         resp.raise_for_status()
         html = await resp.text()
     form_data, action_url = _parse_goss_form(
         html, SOUTH_AYRSHIRE_BASE_URL, SOUTH_AYRSHIRE_BIN_URL, "BINDAYS_"
     )
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         html = await resp.text()
 
@@ -649,7 +675,9 @@ async def _fetch_south_ayrshire(session, uprn: str, address: str) -> list[BinCol
     form_data["BINDAYS_PAGE1_POSTCODE"] = postcode
     form_data["BINDAYS_FORMACTION_NEXT"] = "BINDAYS_PAGE1_WIZBUTTON"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         page2_html = await resp.text()
 
@@ -659,7 +687,9 @@ async def _fetch_south_ayrshire(session, uprn: str, address: str) -> list[BinCol
     form_data["BINDAYS_PAGE2_ADDRESSDROPDOWN"] = uprn
     form_data["BINDAYS_FORMACTION_NEXT"] = "BINDAYS_PAGE2_FIELD7"
 
-    async with session.post(action_url, data=form_data, allow_redirects=True) as resp:
+    async with session.post(
+        action_url, data=form_data, headers=_GOSS_HEADERS, allow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         page3_html = await resp.text()
 
@@ -679,7 +709,14 @@ def _parse_south_ayrshire_page3(html: str, today: date | None = None) -> list[Bi
         return []
 
     earliest: dict[str, date] = {}
-    for key in ("nextBin", "tableRow1", "tableRow2", "tableRow3", "tableRow4", "tableRow5"):
+    for key in (
+        "nextBin",
+        "tableRow1",
+        "tableRow2",
+        "tableRow3",
+        "tableRow4",
+        "tableRow5",
+    ):
         for item in field15.get(key) or []:
             bin_name = item.get("bin", "")
             bin_date_str = item.get("binDate", "")
