@@ -8,8 +8,10 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for Scotti
 |---------|--------|
 | Clackmannanshire | Supported |
 | East Dunbartonshire | Supported |
+| East Renfrewshire | Supported |
 | Falkirk | Supported |
 | North Ayrshire | Supported |
+| South Ayrshire | Supported |
 | West Lothian | Supported |
 | Aberdeen City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/3) |
 | Aberdeenshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/11) |
@@ -21,7 +23,6 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for Scotti
 | Dundee City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/14) |
 | East Ayrshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/13) |
 | East Lothian | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/19) |
-| East Renfrewshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/18) |
 | Fife | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/4) |
 | Glasgow City | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/2) |
 | Highland | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/7) |
@@ -34,7 +35,6 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for Scotti
 | Renfrewshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/27) |
 | Scottish Borders | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/25) |
 | Shetland Islands | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/26) |
-| South Ayrshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/28) |
 | South Lanarkshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/5) |
 | Stirling | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/31) |
 | West Dunbartonshire | [Vote / comment](https://github.com/d0ugal/scottish-bins-homeassistant/issues/30) |

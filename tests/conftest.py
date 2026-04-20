@@ -46,7 +46,9 @@ _add("homeassistant.config_entries", ConfigEntry=_ConfigEntry)
 _add("homeassistant.const", Platform=_Platform)
 _add("homeassistant.core", HomeAssistant=_HomeAssistant)
 _add("homeassistant.helpers")
-_add("homeassistant.helpers.aiohttp_client", async_get_clientsession=lambda *a, **k: None)
+_add(
+    "homeassistant.helpers.aiohttp_client", async_get_clientsession=lambda *a, **k: None
+)
 _add(
     "homeassistant.helpers.update_coordinator",
     DataUpdateCoordinator=_DataUpdateCoordinator,
@@ -55,7 +57,11 @@ _add(
 _add("homeassistant.helpers.device_registry", DeviceInfo=dict)
 _add("homeassistant.helpers.entity_platform")
 _add("homeassistant.components")
-_add("homeassistant.components.sensor", SensorDeviceClass=types.SimpleNamespace(DATE="date"), SensorEntity=object)
+_add(
+    "homeassistant.components.sensor",
+    SensorDeviceClass=types.SimpleNamespace(DATE="date"),
+    SensorEntity=object,
+)
 _add("homeassistant.components.calendar", CalendarEntity=object, CalendarEvent=dict)
 _add("homeassistant.helpers.selector")
 _add("homeassistant.data_entry_flow")

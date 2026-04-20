@@ -24,7 +24,10 @@ async def async_setup_entry(
     council = entry.data[CONF_COUNCIL]
     bins = COUNCIL_BINS.get(council, {})
     async_add_entities(
-        [BinSensor(coordinator, entry, bin_class, name) for bin_class, name in bins.items()]
+        [
+            BinSensor(coordinator, entry, bin_class, name)
+            for bin_class, name in bins.items()
+        ]
     )
 
 

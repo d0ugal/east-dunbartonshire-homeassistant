@@ -36,6 +36,41 @@ Technical notes on each council's bin collection website, for contributors addin
 - **Notes:** Must pass `allow_redirects=True` to follow the Azure blob redirect
 - **Bin types:** `Food caddy`, `Blue bin`, `Green bin`, `Burgundy bin`, `Black box`, `Brown bin`
 
+### East Renfrewshire
+
+- **Status:** Implemented (GOSSForms)
+- **URL:** `https://www.eastrenfrewshire.gov.uk/bin-day`
+- **Form prefix:** `BINDAYSV2_`
+- **Flow:**
+  1. `GET /bin-day` → extract hidden form fields
+  2. `POST` PAGE1 form action with only hidden fields → cookie challenge (303 → verifycookie → 303 back to form with new `fsn` nonce)
+  3. Re-parse form for updated nonce; `POST` PAGE1 with `BINDAYSV2_PAGE1_POSTCODE=<postcode>` and `BINDAYSV2_FORMACTION_NEXT=BINDAYSV2_PAGE1_FIELD290` → PAGE2 HTML
+  4. PAGE2 contains `<select name="BINDAYSV2_PAGE2_UPRN">` with 12-digit zero-padded UPRNs (e.g. `000012345678`) as values
+  5. `POST` PAGE2 with `BINDAYSV2_PAGE2_UPRN=<uprn>` and `BINDAYSV2_FORMACTION_NEXT=BINDAYSV2_PAGE2_FIELD294` → RESULTS HTML
+- **RESULTS data:** `var BINDAYSV2FormData = "<base64>"` → decode → JSON → `RESULTS_1.NEXTCOLLECTIONLISTV4` is an HTML table
+- **Table format:** `<tr><td>dd/mm/yyyy</td><td>Day</td><td><img alt="Blue bin icon"/>...</td></tr>` — multiple bin images can appear in one row
+- **Bin class extraction:** strip `" icon"` suffix from alt text (e.g. `"Blue bin icon"` → `"Blue bin"`)
+- **Notes:**
+  - Coordinator extracts the postcode from the stored address string using UK postcode regex
+  - `aiohttp.ClientSession` cookie jar must persist across all requests in the flow
+
+### South Ayrshire
+
+- **Status:** Implemented (GOSSForms)
+- **URL:** `https://www.south-ayrshire.gov.uk/article/1619/Find-your-collection-days`
+- **Form prefix:** `BINDAYS_`
+- **Flow:**
+  1. `GET` the article URL → extract hidden form fields
+  2. `POST` form action → cookie challenge (same GOSSForms pattern)
+  3. Re-parse; `POST` PAGE1 with `BINDAYS_PAGE1_POSTCODE=<postcode>` and `BINDAYS_FORMACTION_NEXT=BINDAYS_PAGE1_WIZBUTTON` → PAGE2 HTML
+  4. PAGE2 contains `<select name="BINDAYS_PAGE2_ADDRESSDROPDOWN">` with bare UPRNs (e.g. `141041931`) as values
+  5. `POST` PAGE2 with `BINDAYS_PAGE2_ADDRESSDROPDOWN=<uprn>` and `BINDAYS_FORMACTION_NEXT=BINDAYS_PAGE2_FIELD7` → PAGE3 HTML
+- **PAGE3 data:** `var BINDAYSFormData = "<base64>"` → decode → JSON → `PAGE3_1.FIELD15`
+- **FIELD15 structure:** `{"success": true, "nextBin": [...], "tableRow1": [...], ..., "tableRow5": [...]}`
+- **Item format:** `{"bin": "Food Waste Caddy", "binDate": "2026-04-22T22:30:00.000Z", "prettyDate": "Wednesday 22/04/2026"}`
+- **Confirmed bin types:** `Blue/Blue Lidded Bin`, `Brown Bin`, `Food Waste Caddy`, `Green/Green Lidded Bin`
+- **Parser:** collects all items across `nextBin` + `tableRow1-5`, keeps the earliest future date per bin type
+
 ---
 
 ## Investigated — Not Yet Implemented
@@ -133,7 +168,6 @@ Technical notes on each council's bin collection website, for contributors addin
 - Dumfries and Galloway
 - Dundee City
 - East Ayrshire
-- East Renfrewshire
 - Fife
 - Highland
 - Inverclyde
@@ -141,5 +175,4 @@ Technical notes on each council's bin collection website, for contributors addin
 - Orkney Islands
 - Perth and Kinross
 - Shetland Islands
-- South Ayrshire
 - West Dunbartonshire

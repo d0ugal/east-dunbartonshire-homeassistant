@@ -25,8 +25,10 @@ from .const import (
     CONF_UPRN,
     COUNCIL_CLACKMANNANSHIRE,
     COUNCIL_EAST_DUNBARTONSHIRE,
+    COUNCIL_EAST_RENFREWSHIRE,
     COUNCIL_FALKIRK,
     COUNCIL_NORTH_AYRSHIRE,
+    COUNCIL_SOUTH_AYRSHIRE,
     COUNCIL_WEST_LOTHIAN,
     COUNCILS,
     DOMAIN,
@@ -34,8 +36,10 @@ from .const import (
 from .coordinator import (
     fetch_clackmannanshire_properties,
     fetch_east_dunbartonshire_uprns,
+    fetch_east_renfrewshire_properties,
     fetch_falkirk_properties,
     fetch_north_ayrshire_uprns,
+    fetch_south_ayrshire_properties,
     fetch_west_lothian_properties,
     format_east_dun_address,
 )
@@ -50,7 +54,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._council: str | None = None
         self._property_options: dict[str, str] = {}
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         if user_input is not None:
             self._council = user_input[CONF_COUNCIL]
             return await self.async_step_address()
@@ -59,7 +65,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_COUNCIL): SelectSelector(
                     SelectSelectorConfig(
-                        options=[SelectOptionDict(value=k, label=v) for k, v in COUNCILS.items()],
+                        options=[
+                            SelectOptionDict(value=k, label=v)
+                            for k, v in COUNCILS.items()
+                        ],
                         mode=SelectSelectorMode.LIST,
                     )
                 )
@@ -67,7 +76,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="user", data_schema=schema)
 
-    async def async_step_address(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_address(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -109,9 +120,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await fetch_north_ayrshire_uprns(session, query)
         if self._council == COUNCIL_WEST_LOTHIAN:
             return await fetch_west_lothian_properties(session, query)
+        if self._council == COUNCIL_EAST_RENFREWSHIRE:
+            return await fetch_east_renfrewshire_properties(session, query)
+        if self._council == COUNCIL_SOUTH_AYRSHIRE:
+            return await fetch_south_ayrshire_properties(session, query)
         return []
 
-    async def async_step_select_uprn(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_select_uprn(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         if user_input is not None:
             uprn = user_input[CONF_UPRN]
             address = self._property_options[uprn]
@@ -127,7 +144,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         options = [
-            SelectOptionDict(value=pid, label=name) for pid, name in self._property_options.items()
+            SelectOptionDict(value=pid, label=name)
+            for pid, name in self._property_options.items()
         ]
         schema = vol.Schema(
             {

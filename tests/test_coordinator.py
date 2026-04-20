@@ -5,12 +5,18 @@ import json as json_mod
 from datetime import date
 
 from custom_components.scottish_bins.coordinator import (
+    _extract_uk_postcode,
     _parse_clackmannanshire_search,
     _parse_east_dunbartonshire_html,
+    _parse_east_renfrewshire_page2,
+    _parse_east_renfrewshire_results,
+    _parse_east_renfrewshire_table,
     _parse_falkirk_json,
     _parse_falkirk_search,
     _parse_ics_collections,
     _parse_north_ayrshire_attrs,
+    _parse_south_ayrshire_page2,
+    _parse_south_ayrshire_page3,
     _parse_west_lothian_addresses,
     _parse_west_lothian_form,
     _parse_west_lothian_page2,
@@ -484,3 +490,246 @@ def test_parse_west_lothian_page2_no_data_var():
 def test_parse_west_lothian_page2_empty_collections():
     html = _make_wl_page2([])
     assert _parse_west_lothian_page2(html) == []
+
+
+# ---------------------------------------------------------------------------
+# East Renfrewshire — PAGE2 address dropdown parser
+# ---------------------------------------------------------------------------
+
+EAST_REN_PAGE2_HTML = """
+<html><body>
+<select name="BINDAYSV2_PAGE2_UPRN">
+  <option value="">-- Select address --</option>
+  <option value="000012345678">1 High Street, Barrhead, G78 1AA</option>
+  <option value="000087654321">2 High Street, Barrhead, G78 1AB</option>
+</select>
+</body></html>
+"""
+
+
+def test_parse_east_renfrewshire_page2_finds_options():
+    results = _parse_east_renfrewshire_page2(EAST_REN_PAGE2_HTML)
+    assert len(results) == 2
+
+
+def test_parse_east_renfrewshire_page2_values_and_labels():
+    results = _parse_east_renfrewshire_page2(EAST_REN_PAGE2_HTML)
+    assert results[0] == ("000012345678", "1 High Street, Barrhead, G78 1AA")
+    assert results[1] == ("000087654321", "2 High Street, Barrhead, G78 1AB")
+
+
+def test_parse_east_renfrewshire_page2_skips_blank_value():
+    results = _parse_east_renfrewshire_page2(EAST_REN_PAGE2_HTML)
+    values = [r[0] for r in results]
+    assert "" not in values
+
+
+def test_parse_east_renfrewshire_page2_no_select():
+    assert _parse_east_renfrewshire_page2("<html>no form here</html>") == []
+
+
+# ---------------------------------------------------------------------------
+# East Renfrewshire — collection table parser
+# ---------------------------------------------------------------------------
+
+EAST_REN_TABLE_HTML = """
+<table>
+  <tr>
+    <td>21/04/2026</td>
+    <td>Tuesday</td>
+    <td><img alt="Blue bin icon" /></td>
+  </tr>
+  <tr>
+    <td>28/04/2026</td>
+    <td>Tuesday</td>
+    <td><img alt="Green bin icon" /><img alt="Grey bin icon" /></td>
+  </tr>
+</table>
+"""
+
+
+def test_parse_east_renfrewshire_table_single_bin():
+    results = _parse_east_renfrewshire_table(EAST_REN_TABLE_HTML)
+    blue = [r for r in results if r.bin_class == "Blue bin"]
+    assert len(blue) == 1
+    assert blue[0].next_date == date(2026, 4, 21)
+
+
+def test_parse_east_renfrewshire_table_multiple_bins_same_row():
+    results = _parse_east_renfrewshire_table(EAST_REN_TABLE_HTML)
+    by_class = {r.bin_class: r.next_date for r in results}
+    assert by_class["Green bin"] == date(2026, 4, 28)
+    assert by_class["Grey bin"] == date(2026, 4, 28)
+
+
+def test_parse_east_renfrewshire_table_total_count():
+    results = _parse_east_renfrewshire_table(EAST_REN_TABLE_HTML)
+    assert len(results) == 3
+
+
+def test_parse_east_renfrewshire_table_strips_icon_suffix():
+    results = _parse_east_renfrewshire_table(EAST_REN_TABLE_HTML)
+    classes = {r.bin_class for r in results}
+    assert "Blue bin" in classes
+    assert "Blue bin icon" not in classes
+
+
+def test_parse_east_renfrewshire_table_bad_date_skipped():
+    html = '<table><tr><td>not-a-date</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    assert _parse_east_renfrewshire_table(html) == []
+
+
+def test_parse_east_renfrewshire_table_empty():
+    assert _parse_east_renfrewshire_table("") == []
+
+
+# ---------------------------------------------------------------------------
+# East Renfrewshire — results page parser
+# ---------------------------------------------------------------------------
+
+
+def _make_er_results(table_html: str) -> str:
+    payload = {"RESULTS_1": {"NEXTCOLLECTIONLISTV4": table_html}}
+    encoded = base64.b64encode(json_mod.dumps(payload).encode()).decode()
+    return f'<script>var BINDAYSV2FormData = "{encoded}";</script>'
+
+
+def test_parse_east_renfrewshire_results_basic():
+    table = '<table><tr><td>21/04/2026</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    results = _parse_east_renfrewshire_results(_make_er_results(table))
+    assert len(results) == 1
+    assert results[0].bin_class == "Blue bin"
+    assert results[0].next_date == date(2026, 4, 21)
+
+
+def test_parse_east_renfrewshire_results_no_data_var():
+    assert _parse_east_renfrewshire_results("<html>nothing here</html>") == []
+
+
+def test_parse_east_renfrewshire_results_empty_table():
+    assert _parse_east_renfrewshire_results(_make_er_results("")) == []
+
+
+# ---------------------------------------------------------------------------
+# South Ayrshire — PAGE2 address dropdown parser
+# ---------------------------------------------------------------------------
+
+SOUTH_AYR_PAGE2_HTML = """
+<html><body>
+<select name="BINDAYS_PAGE2_ADDRESSDROPDOWN">
+  <option value="">-- Select address --</option>
+  <option value="141041931">2 Thornyflat Place, Ayr, KA8 0NE</option>
+  <option value="141041932">4 Thornyflat Place, Ayr, KA8 0NE</option>
+</select>
+</body></html>
+"""
+
+
+def test_parse_south_ayrshire_page2_finds_options():
+    results = _parse_south_ayrshire_page2(SOUTH_AYR_PAGE2_HTML)
+    assert len(results) == 2
+
+
+def test_parse_south_ayrshire_page2_values_and_labels():
+    results = _parse_south_ayrshire_page2(SOUTH_AYR_PAGE2_HTML)
+    assert results[0] == ("141041931", "2 Thornyflat Place, Ayr, KA8 0NE")
+    assert results[1] == ("141041932", "4 Thornyflat Place, Ayr, KA8 0NE")
+
+
+def test_parse_south_ayrshire_page2_skips_blank_value():
+    results = _parse_south_ayrshire_page2(SOUTH_AYR_PAGE2_HTML)
+    assert all(v for v, _ in results)
+
+
+def test_parse_south_ayrshire_page2_no_select():
+    assert _parse_south_ayrshire_page2("<html>no form</html>") == []
+
+
+# ---------------------------------------------------------------------------
+# South Ayrshire — PAGE3 data parser
+# ---------------------------------------------------------------------------
+
+
+def _make_sa_page3(field15: dict) -> str:
+    payload = {"PAGE3_1": {"FIELD15": field15}}
+    encoded = base64.b64encode(json_mod.dumps(payload).encode()).decode()
+    return f'<script>var BINDAYSFormData = "{encoded}";</script>'
+
+
+SA_FIELD15 = {
+    "success": True,
+    "nextBin": [
+        {"bin": "Food Waste Caddy", "binDate": "2026-04-22T22:30:00.000Z", "prettyDate": "Wednesday 22/04/2026"},
+    ],
+    "tableRow1": [
+        {"bin": "Food Waste Caddy", "binDate": "2026-04-22T22:30:00.000Z", "prettyDate": "Wednesday 22/04/2026"},
+        {"bin": "Blue/Blue Lidded Bin", "binDate": "2026-04-29T22:30:00.000Z", "prettyDate": "Wednesday 29/04/2026"},
+    ],
+    "tableRow2": [
+        {"bin": "Brown Bin", "binDate": "2026-05-06T22:30:00.000Z", "prettyDate": "Wednesday 06/05/2026"},
+    ],
+}
+
+
+def test_parse_south_ayrshire_page3_returns_bins():
+    results = _parse_south_ayrshire_page3(_make_sa_page3(SA_FIELD15), today=date(2026, 4, 20))
+    by_class = {r.bin_class: r.next_date for r in results}
+    assert by_class["Food Waste Caddy"] == date(2026, 4, 22)
+    assert by_class["Blue/Blue Lidded Bin"] == date(2026, 4, 29)
+    assert by_class["Brown Bin"] == date(2026, 5, 6)
+
+
+def test_parse_south_ayrshire_page3_deduplicates_keeping_earliest():
+    field15 = {
+        "success": True,
+        "nextBin": [{"bin": "Food Waste Caddy", "binDate": "2026-04-22T00:00:00.000Z"}],
+        "tableRow1": [{"bin": "Food Waste Caddy", "binDate": "2026-04-29T00:00:00.000Z"}],
+    }
+    results = _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+    food = [r for r in results if r.bin_class == "Food Waste Caddy"]
+    assert len(food) == 1
+    assert food[0].next_date == date(2026, 4, 22)
+
+
+def test_parse_south_ayrshire_page3_filters_past_dates():
+    field15 = {
+        "success": True,
+        "tableRow1": [{"bin": "Food Waste Caddy", "binDate": "2026-04-10T00:00:00.000Z"}],
+    }
+    results = _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+    assert results == []
+
+
+def test_parse_south_ayrshire_page3_success_false():
+    field15 = {"success": False}
+    assert _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20)) == []
+
+
+def test_parse_south_ayrshire_page3_no_data_var():
+    assert _parse_south_ayrshire_page3("<html>nothing</html>", today=date(2026, 4, 20)) == []
+
+
+def test_parse_south_ayrshire_page3_empty_rows():
+    field15 = {"success": True, "nextBin": [], "tableRow1": []}
+    assert _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20)) == []
+
+
+# ---------------------------------------------------------------------------
+# _extract_uk_postcode helper
+# ---------------------------------------------------------------------------
+
+
+def test_extract_uk_postcode_standard():
+    assert _extract_uk_postcode("1 High Street, Barrhead, G78 1AA") == "G78 1AA"
+
+
+def test_extract_uk_postcode_at_end():
+    assert _extract_uk_postcode("2 Thornyflat Place, Ayr, KA8 0NE") == "KA8 0NE"
+
+
+def test_extract_uk_postcode_missing():
+    assert _extract_uk_postcode("somewhere without postcode") is None
+
+
+def test_extract_uk_postcode_edinburgh():
+    assert _extract_uk_postcode("10 Royal Mile, Edinburgh, EH1 2AB") == "EH1 2AB"
