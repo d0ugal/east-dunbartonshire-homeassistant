@@ -13,6 +13,12 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import BIN_TYPES, DOMAIN
 from .coordinator import EastDunbartonshireCoordinator
+from .school_holidays import SchoolHolidaysCoordinator
+
+_SCHOOL_DEVICE = DeviceInfo(
+    identifiers={(DOMAIN, "east_dunbartonshire_school_holidays")},
+    name="East Dunbartonshire Schools",
+)
 
 
 async def async_setup_entry(
@@ -20,10 +26,19 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: EastDunbartonshireCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [BinSensor(coordinator, entry, bin_class, name) for bin_class, name in BIN_TYPES.items()]
-    )
+    data = hass.data[DOMAIN]
+    coordinator: EastDunbartonshireCoordinator = data[entry.entry_id]
+    entities: list[SensorEntity] = [
+        BinSensor(coordinator, entry, bin_class, name) for bin_class, name in BIN_TYPES.items()
+    ]
+    if "school_holidays" in data:
+        entities.append(SchoolHolidayYearsSensor(data["school_holidays"]))
+    async_add_entities(entities)
+
+
+# ---------------------------------------------------------------------------
+# Bin sensors
+# ---------------------------------------------------------------------------
 
 
 class BinSensor(CoordinatorEntity[EastDunbartonshireCoordinator], SensorEntity):
@@ -64,3 +79,23 @@ class BinSensor(CoordinatorEntity[EastDunbartonshireCoordinator], SensorEntity):
                 days = (collection.next_date - datetime.date.today()).days
                 return {"days_until": days}
         return {}
+
+
+# ---------------------------------------------------------------------------
+# School holiday sensors
+# ---------------------------------------------------------------------------
+
+
+class SchoolHolidayYearsSensor(CoordinatorEntity[SchoolHolidaysCoordinator], SensorEntity):
+    """Tracks which academic years' data is available. Automating on state change detects new releases."""
+
+    _attr_has_entity_name = True
+    _attr_name = "School holiday years available"
+    _attr_unique_id = "east_dunbartonshire_school_holiday_years"
+    _attr_device_info = _SCHOOL_DEVICE
+
+    @property
+    def native_value(self) -> str | None:
+        if not self.coordinator.data:
+            return None
+        return ", ".join(self.coordinator.data.available_years)
