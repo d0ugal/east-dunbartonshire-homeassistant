@@ -28,13 +28,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await school_coordinator.async_config_entry_first_refresh()
         domain_data["school_holidays"] = school_coordinator
 
-    # Planning coordinator — per entry (proximity is relative to the configured address)
-    address = entry.data.get(CONF_ADDRESS, "")
-    postcode = address.split(", ")[-1] if ", " in address else address
-    if postcode:
-        planning_coordinator = PlanningCoordinator(hass, postcode)
-        await planning_coordinator.async_config_entry_first_refresh()
-        domain_data[f"{entry.entry_id}_planning"] = planning_coordinator
+    # Planning coordinator — proximity is relative to the HA home location
+    planning_coordinator = PlanningCoordinator(
+        hass, hass.config.latitude, hass.config.longitude
+    )
+    await planning_coordinator.async_config_entry_first_refresh()
+    domain_data[f"{entry.entry_id}_planning"] = planning_coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
