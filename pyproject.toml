@@ -1,5 +1,5 @@
 [project]
-name = "scottish-bins-homeassistant"
+name = "uk-bins-homeassistant"
 version = "0.1.0"
 dependencies = []
 
@@ -25,7 +25,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["custom_components.scottish_bins"]
+known-first-party = ["custom_components.uk_bins"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -34,7 +34,7 @@ markers = ["integration: requires live network access to council websites (sched
 
 [tool.pyright]
 pythonVersion = "3.12"
-include = ["custom_components/scottish_bins"]
+include = ["custom_components/uk_bins"]
 typeCheckingMode = "basic"
 reportMissingImports = "warning"
 reportMissingModuleSource = "none"

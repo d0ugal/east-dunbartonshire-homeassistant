@@ -4,7 +4,7 @@ import base64
 import json as json_mod
 from datetime import date
 
-from custom_components.scottish_bins.coordinator import (
+from custom_components.uk_bins.coordinator import (
     _extract_uk_postcode,
     _parse_clackmannanshire_search,
     _parse_east_dunbartonshire_html,
@@ -191,7 +191,9 @@ def test_ics_rrule_until_expired():
 
 def test_ics_rrule_until_still_valid():
     # starts 2026-04-13, weekly, UNTIL 2026-12-31; today is 2026-04-20
-    ics = _make_ics([_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")])
+    ics = _make_ics(
+        [_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")]
+    )
     results = _parse_ics_collections(ics, date(2026, 4, 20))
     assert len(results) == 1
     assert results[0].next_date == date(2026, 4, 20)
@@ -573,7 +575,9 @@ def test_parse_east_renfrewshire_table_strips_icon_suffix():
 
 
 def test_parse_east_renfrewshire_table_bad_date_skipped():
-    html = '<table><tr><td>not-a-date</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    html = (
+        '<table><tr><td>not-a-date</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    )
     assert _parse_east_renfrewshire_table(html) == []
 
 
@@ -593,7 +597,9 @@ def _make_er_results(table_html: str) -> str:
 
 
 def test_parse_east_renfrewshire_results_basic():
-    table = '<table><tr><td>21/04/2026</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    table = (
+        '<table><tr><td>21/04/2026</td><td><img alt="Blue bin icon"/></td></tr></table>'
+    )
     results = _parse_east_renfrewshire_results(_make_er_results(table))
     assert len(results) == 1
     assert results[0].bin_class == "Blue bin"
@@ -686,7 +692,9 @@ SA_FIELD15 = {
 
 
 def test_parse_south_ayrshire_page3_returns_bins():
-    results = _parse_south_ayrshire_page3(_make_sa_page3(SA_FIELD15), today=date(2026, 4, 20))
+    results = _parse_south_ayrshire_page3(
+        _make_sa_page3(SA_FIELD15), today=date(2026, 4, 20)
+    )
     by_class = {r.bin_class: r.next_date for r in results}
     assert by_class["Food Waste Caddy"] == date(2026, 4, 22)
     assert by_class["Blue/Blue Lidded Bin"] == date(2026, 4, 29)
@@ -697,9 +705,13 @@ def test_parse_south_ayrshire_page3_deduplicates_keeping_earliest():
     field15 = {
         "success": True,
         "nextBin": [{"bin": "Food Waste Caddy", "binDate": "2026-04-22T00:00:00.000Z"}],
-        "tableRow1": [{"bin": "Food Waste Caddy", "binDate": "2026-04-29T00:00:00.000Z"}],
+        "tableRow1": [
+            {"bin": "Food Waste Caddy", "binDate": "2026-04-29T00:00:00.000Z"}
+        ],
     }
-    results = _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+    results = _parse_south_ayrshire_page3(
+        _make_sa_page3(field15), today=date(2026, 4, 20)
+    )
     food = [r for r in results if r.bin_class == "Food Waste Caddy"]
     assert len(food) == 1
     assert food[0].next_date == date(2026, 4, 22)
@@ -708,24 +720,37 @@ def test_parse_south_ayrshire_page3_deduplicates_keeping_earliest():
 def test_parse_south_ayrshire_page3_filters_past_dates():
     field15 = {
         "success": True,
-        "tableRow1": [{"bin": "Food Waste Caddy", "binDate": "2026-04-10T00:00:00.000Z"}],
+        "tableRow1": [
+            {"bin": "Food Waste Caddy", "binDate": "2026-04-10T00:00:00.000Z"}
+        ],
     }
-    results = _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+    results = _parse_south_ayrshire_page3(
+        _make_sa_page3(field15), today=date(2026, 4, 20)
+    )
     assert results == []
 
 
 def test_parse_south_ayrshire_page3_success_false():
     field15 = {"success": False}
-    assert _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20)) == []
+    assert (
+        _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+        == []
+    )
 
 
 def test_parse_south_ayrshire_page3_no_data_var():
-    assert _parse_south_ayrshire_page3("<html>nothing</html>", today=date(2026, 4, 20)) == []
+    assert (
+        _parse_south_ayrshire_page3("<html>nothing</html>", today=date(2026, 4, 20))
+        == []
+    )
 
 
 def test_parse_south_ayrshire_page3_empty_rows():
     field15 = {"success": True, "nextBin": [], "tableRow1": []}
-    assert _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20)) == []
+    assert (
+        _parse_south_ayrshire_page3(_make_sa_page3(field15), today=date(2026, 4, 20))
+        == []
+    )
 
 
 # ---------------------------------------------------------------------------

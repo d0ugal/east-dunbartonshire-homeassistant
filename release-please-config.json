@@ -5,7 +5,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "custom_components/scottish_bins/manifest.json",
+          "path": "custom_components/uk_bins/manifest.json",
           "jsonpath": "$.version"
         }
       ]

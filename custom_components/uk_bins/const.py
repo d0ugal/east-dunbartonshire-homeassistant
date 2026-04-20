@@ -1,6 +1,6 @@
-"""Constants for the Scottish Bins integration."""
+"""Constants for the UK Bins integration."""
 
-DOMAIN = "scottish_bins"
+DOMAIN = "uk_bins"
 
 CONF_COUNCIL = "council"
 CONF_UPRN = "uprn"
