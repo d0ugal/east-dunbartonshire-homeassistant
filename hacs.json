@@ -1,5 +1,4 @@
 {
     "name": "East Dunbartonshire",
-    "render_readme": true,
-    "content_in_root": false
+    "render_readme": true
 }
