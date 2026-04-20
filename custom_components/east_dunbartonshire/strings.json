@@ -1,12 +1,6 @@
 {
     "config": {
         "step": {
-            "user": {
-                "title": "Select your council",
-                "data": {
-                    "council": "Council"
-                }
-            },
             "address": {
                 "title": "Find your property",
                 "description": "Search by street, house name or postcode",
@@ -23,7 +17,7 @@
         },
         "error": {
             "no_results": "No addresses found. Try a different search term.",
-            "cannot_connect": "Failed to connect to the council website. Please try again."
+            "cannot_connect": "Failed to connect to the East Dunbartonshire website. Please try again."
         },
         "abort": {
             "already_configured": "This property is already configured."

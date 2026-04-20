@@ -1,4 +1,4 @@
-"""Calendar platform for the UK Bins integration."""
+"""Calendar platform for the East Dunbartonshire integration."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import BinCollection, UkBinsCoordinator
+from .coordinator import BinCollection, EastDunbartonshireCoordinator
 
 
 async def async_setup_entry(
@@ -20,15 +20,15 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: UkBinsCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([UkBinsCalendar(coordinator, entry)])
+    coordinator: EastDunbartonshireCoordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([EastDunbartonshireCalendar(coordinator, entry)])
 
 
-class UkBinsCalendar(CoordinatorEntity[UkBinsCoordinator], CalendarEntity):
+class EastDunbartonshireCalendar(CoordinatorEntity[EastDunbartonshireCoordinator], CalendarEntity):
     _attr_has_entity_name = True
     _attr_name = "Bin collections"
 
-    def __init__(self, coordinator: UkBinsCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: EastDunbartonshireCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_calendar"
         self._attr_device_info = DeviceInfo(

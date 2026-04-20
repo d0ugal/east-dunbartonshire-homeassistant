@@ -5,7 +5,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "custom_components/uk_bins/manifest.json",
+          "path": "custom_components/east_dunbartonshire/manifest.json",
           "jsonpath": "$.version"
         }
       ]

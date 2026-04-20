@@ -1,4 +1,4 @@
-"""Sensor platform for the UK Bins integration."""
+"""Sensor platform for the East Dunbartonshire integration."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_COUNCIL, COUNCIL_BINS, DOMAIN
-from .coordinator import UkBinsCoordinator
+from .const import BIN_TYPES, DOMAIN
+from .coordinator import EastDunbartonshireCoordinator
 
 
 async def async_setup_entry(
@@ -20,21 +20,19 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: UkBinsCoordinator = hass.data[DOMAIN][entry.entry_id]
-    council = entry.data[CONF_COUNCIL]
-    bins = COUNCIL_BINS.get(council, {})
+    coordinator: EastDunbartonshireCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        [BinSensor(coordinator, entry, bin_class, name) for bin_class, name in bins.items()]
+        [BinSensor(coordinator, entry, bin_class, name) for bin_class, name in BIN_TYPES.items()]
     )
 
 
-class BinSensor(CoordinatorEntity[UkBinsCoordinator], SensorEntity):
+class BinSensor(CoordinatorEntity[EastDunbartonshireCoordinator], SensorEntity):
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.DATE
 
     def __init__(
         self,
-        coordinator: UkBinsCoordinator,
+        coordinator: EastDunbartonshireCoordinator,
         entry: ConfigEntry,
         bin_class: str,
         name: str,

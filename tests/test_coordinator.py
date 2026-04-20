@@ -4,7 +4,7 @@ import base64
 import json as json_mod
 from datetime import date
 
-from custom_components.uk_bins.coordinator import (
+from custom_components.east_dunbartonshire.coordinator import (
     _extract_uk_postcode,
     _parse_clackmannanshire_search,
     _parse_east_dunbartonshire_html,
