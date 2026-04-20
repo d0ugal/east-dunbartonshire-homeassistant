@@ -191,9 +191,7 @@ def test_ics_rrule_until_expired():
 
 def test_ics_rrule_until_still_valid():
     # starts 2026-04-13, weekly, UNTIL 2026-12-31; today is 2026-04-20
-    ics = _make_ics(
-        [_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")]
-    )
+    ics = _make_ics([_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")])
     results = _parse_ics_collections(ics, date(2026, 4, 20))
     assert len(results) == 1
     assert results[0].next_date == date(2026, 4, 20)
@@ -659,14 +657,30 @@ def _make_sa_page3(field15: dict) -> str:
 SA_FIELD15 = {
     "success": True,
     "nextBin": [
-        {"bin": "Food Waste Caddy", "binDate": "2026-04-22T22:30:00.000Z", "prettyDate": "Wednesday 22/04/2026"},
+        {
+            "bin": "Food Waste Caddy",
+            "binDate": "2026-04-22T22:30:00.000Z",
+            "prettyDate": "Wednesday 22/04/2026",
+        },
     ],
     "tableRow1": [
-        {"bin": "Food Waste Caddy", "binDate": "2026-04-22T22:30:00.000Z", "prettyDate": "Wednesday 22/04/2026"},
-        {"bin": "Blue/Blue Lidded Bin", "binDate": "2026-04-29T22:30:00.000Z", "prettyDate": "Wednesday 29/04/2026"},
+        {
+            "bin": "Food Waste Caddy",
+            "binDate": "2026-04-22T22:30:00.000Z",
+            "prettyDate": "Wednesday 22/04/2026",
+        },
+        {
+            "bin": "Blue/Blue Lidded Bin",
+            "binDate": "2026-04-29T22:30:00.000Z",
+            "prettyDate": "Wednesday 29/04/2026",
+        },
     ],
     "tableRow2": [
-        {"bin": "Brown Bin", "binDate": "2026-05-06T22:30:00.000Z", "prettyDate": "Wednesday 06/05/2026"},
+        {
+            "bin": "Brown Bin",
+            "binDate": "2026-05-06T22:30:00.000Z",
+            "prettyDate": "Wednesday 06/05/2026",
+        },
     ],
 }
 
