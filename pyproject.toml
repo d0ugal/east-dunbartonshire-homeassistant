@@ -5,6 +5,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest"]
+integration = ["pytest", "pytest-asyncio", "aiohttp"]
 
 [tool.ruff]
 target-version = "py312"
@@ -28,6 +29,8 @@ known-first-party = ["custom_components.scottish_bins"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["integration: requires live network access to council websites (scheduled CI only)"]
 
 [tool.pyright]
 pythonVersion = "3.12"
