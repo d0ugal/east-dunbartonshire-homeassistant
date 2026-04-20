@@ -8,6 +8,7 @@ Run with: uv run --extra integration pytest tests/integration/ -v
 """
 
 import pytest
+
 from custom_components.uk_bins.coordinator import (
     _fetch_clackmannanshire,
     _fetch_east_dunbartonshire,
@@ -41,9 +42,7 @@ async def test_clackmannanshire(session):
     assert properties, "No properties found for Clackmannanshire"
     property_id, _ = properties[0]
     collections = await _fetch_clackmannanshire(session, property_id)
-    assert (
-        collections
-    ), f"No bin collections for Clackmannanshire property {property_id}"
+    assert collections, f"No bin collections for Clackmannanshire property {property_id}"
 
 
 async def test_falkirk(session):
@@ -51,9 +50,7 @@ async def test_falkirk(session):
     assert properties, "No properties found for Falkirk"
     uprn, _ = properties[0]
     collections = await _fetch_falkirk(session, uprn)
-    assert isinstance(
-        collections, list
-    ), f"Unexpected result type for Falkirk UPRN {uprn}"
+    assert isinstance(collections, list), f"Unexpected result type for Falkirk UPRN {uprn}"
 
 
 async def test_north_ayrshire(session):
@@ -61,9 +58,7 @@ async def test_north_ayrshire(session):
     assert properties, "No properties found for North Ayrshire"
     uprn, _ = properties[0]
     collections = await _fetch_north_ayrshire(session, uprn)
-    assert isinstance(
-        collections, list
-    ), f"Unexpected result type for North Ayrshire UPRN {uprn}"
+    assert isinstance(collections, list), f"Unexpected result type for North Ayrshire UPRN {uprn}"
 
 
 async def test_west_lothian(session):
