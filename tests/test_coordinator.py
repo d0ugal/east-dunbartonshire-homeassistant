@@ -1,9 +1,10 @@
 """Unit tests for coordinator parsing functions."""
 
+import base64
+import json as json_mod
 from datetime import date
 
 from custom_components.scottish_bins.coordinator import (
-    BinCollection,
     _parse_clackmannanshire_search,
     _parse_east_dunbartonshire_html,
     _parse_falkirk_json,
@@ -15,7 +16,6 @@ from custom_components.scottish_bins.coordinator import (
     _parse_west_lothian_page2,
     format_east_dun_address,
 )
-
 
 # ---------------------------------------------------------------------------
 # East Dunbartonshire — address formatter
@@ -124,6 +124,7 @@ def test_parse_clackmannanshire_search_empty():
 # ICS parser (used by Clackmannanshire)
 # ---------------------------------------------------------------------------
 
+
 def _make_ics(events: list[str]) -> str:
     body = "\n".join(events)
     return f"BEGIN:VCALENDAR\n{body}\nEND:VCALENDAR"
@@ -175,24 +176,30 @@ def test_ics_fortnightly_rrule():
 
 def test_ics_rrule_until_expired():
     # UNTIL in the past → no future occurrences
-    ics = _make_ics([_make_event("Food caddy", "20250101", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20250401")])
+    ics = _make_ics(
+        [_make_event("Food caddy", "20250101", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20250401")]
+    )
     results = _parse_ics_collections(ics, date(2026, 4, 20))
     assert results == []
 
 
 def test_ics_rrule_until_still_valid():
     # starts 2026-04-13, weekly, UNTIL 2026-12-31; today is 2026-04-20
-    ics = _make_ics([_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")])
+    ics = _make_ics(
+        [_make_event("Grey bin", "20260413", "FREQ=WEEKLY;INTERVAL=1;UNTIL=20261231")]
+    )
     results = _parse_ics_collections(ics, date(2026, 4, 20))
     assert len(results) == 1
     assert results[0].next_date == date(2026, 4, 20)
 
 
 def test_ics_multiple_events():
-    ics = _make_ics([
-        _make_event("Grey bin", "20260420"),
-        _make_event("Blue bin", "20260421"),
-    ])
+    ics = _make_ics(
+        [
+            _make_event("Grey bin", "20260420"),
+            _make_event("Blue bin", "20260421"),
+        ]
+    )
     results = _parse_ics_collections(ics, date(2026, 4, 19))
     names = {r.name for r in results}
     assert names == {"Grey bin", "Blue bin"}
@@ -327,17 +334,31 @@ def test_parse_north_ayrshire_attrs_empty():
 
 
 def test_parse_west_lothian_addresses_formats_correctly():
-    results = _parse_west_lothian_addresses([
-        {"udprn": "12345", "line1": "1 Main Street", "town": "Livingston", "postcode": "EH54 5AA"},
-    ])
+    results = _parse_west_lothian_addresses(
+        [
+            {
+                "udprn": "12345",
+                "line1": "1 Main Street",
+                "town": "Livingston",
+                "postcode": "EH54 5AA",
+            },
+        ]
+    )
     assert len(results) == 1
     assert results[0] == ("12345", "1 Main Street, Livingston, EH54 5AA")
 
 
 def test_parse_west_lothian_addresses_skips_empty_udprn():
-    results = _parse_west_lothian_addresses([
-        {"udprn": "", "line1": "Flat 1", "town": "Bathgate", "postcode": "EH48 1AA"},
-    ])
+    results = _parse_west_lothian_addresses(
+        [
+            {
+                "udprn": "",
+                "line1": "Flat 1",
+                "town": "Bathgate",
+                "postcode": "EH48 1AA",
+            },
+        ]
+    )
     assert results == []
 
 
@@ -346,10 +367,12 @@ def test_parse_west_lothian_addresses_empty_list():
 
 
 def test_parse_west_lothian_addresses_multiple():
-    results = _parse_west_lothian_addresses([
-        {"udprn": "1", "line1": "1 Road", "town": "Town", "postcode": "EH1 1AA"},
-        {"udprn": "2", "line1": "2 Road", "town": "Town", "postcode": "EH1 1AB"},
-    ])
+    results = _parse_west_lothian_addresses(
+        [
+            {"udprn": "1", "line1": "1 Road", "town": "Town", "postcode": "EH1 1AA"},
+            {"udprn": "2", "line1": "2 Road", "town": "Town", "postcode": "EH1 1AB"},
+        ]
+    )
     assert len(results) == 2
     assert results[0][0] == "1"
     assert results[1][0] == "2"
@@ -398,9 +421,6 @@ def test_parse_west_lothian_form_empty_html():
 # West Lothian — PAGE2 parser
 # ---------------------------------------------------------------------------
 
-import base64
-import json as json_mod
-
 
 def _make_wl_page2(collections: list[dict]) -> str:
     payload = {"PAGE2_1": {"COLLECTIONS": collections}}
@@ -409,10 +429,20 @@ def _make_wl_page2(collections: list[dict]) -> str:
 
 
 def test_parse_west_lothian_page2_basic():
-    html = _make_wl_page2([
-        {"binType": "BLUE", "binName": "Blue bin", "nextCollectionISO": "2026-04-21"},
-        {"binType": "GREY", "binName": "Grey bin", "nextCollectionISO": "2026-04-28"},
-    ])
+    html = _make_wl_page2(
+        [
+            {
+                "binType": "BLUE",
+                "binName": "Blue bin",
+                "nextCollectionISO": "2026-04-21",
+            },
+            {
+                "binType": "GREY",
+                "binName": "Grey bin",
+                "nextCollectionISO": "2026-04-28",
+            },
+        ]
+    )
     results = _parse_west_lothian_page2(html)
     assert len(results) == 2
     by_type = {r.bin_class: r.next_date for r in results}
@@ -421,17 +451,29 @@ def test_parse_west_lothian_page2_basic():
 
 
 def test_parse_west_lothian_page2_uses_bin_name():
-    html = _make_wl_page2([
-        {"binType": "BLUE", "binName": "Blue Recycling Bin", "nextCollectionISO": "2026-04-21"},
-    ])
+    html = _make_wl_page2(
+        [
+            {
+                "binType": "BLUE",
+                "binName": "Blue Recycling Bin",
+                "nextCollectionISO": "2026-04-21",
+            },
+        ]
+    )
     results = _parse_west_lothian_page2(html)
     assert results[0].name == "Blue Recycling Bin"
 
 
 def test_parse_west_lothian_page2_skips_bad_date():
-    html = _make_wl_page2([
-        {"binType": "BLUE", "binName": "Blue bin", "nextCollectionISO": "not-a-date"},
-    ])
+    html = _make_wl_page2(
+        [
+            {
+                "binType": "BLUE",
+                "binName": "Blue bin",
+                "nextCollectionISO": "not-a-date",
+            },
+        ]
+    )
     assert _parse_west_lothian_page2(html) == []
 
 
