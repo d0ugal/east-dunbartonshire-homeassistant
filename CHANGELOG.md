@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.2](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.1...v0.3.2) (2026-04-21)
+
+
+### Bug Fixes
+
+* apply ruff formatting ([9e324ae](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/9e324ae988430ae421483c00c3fb6429fa6451a9))
+* extract cutoff_ms to avoid ruff line-length violation ([0f195e9](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/0f195e95a568d0d3de62b2cb21223a1cef050721))
+* filter planning applications to last 90 days via DATEMODIFIED ([5d2e0a3](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/5d2e0a35d7bee98cfc0d154859cb52eeb3bebdf2))
+* use datetime.UTC alias (UP017) ([6dda37b](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/6dda37b554215ed413703a9924bb5fc74d927171))
+
+
+### Documentation
+
+* add example planning application automations to README ([6bc1d91](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/6bc1d9178e5143cdf0ea2f236cffe28128192954))
+* add planning applications and geo location to README ([7783533](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/7783533b24dfd6dddd690d2e9f41f20d0e31be75))
+
 ## [0.3.1](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.0...v0.3.1) (2026-04-21)
 
 
