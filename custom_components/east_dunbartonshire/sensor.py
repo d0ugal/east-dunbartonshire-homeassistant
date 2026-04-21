@@ -30,8 +30,7 @@ async def async_setup_entry(
     data = hass.data[DOMAIN]
     coordinator: EastDunbartonshireCoordinator = data[entry.entry_id]
     entities: list[SensorEntity] = [
-        BinSensor(coordinator, entry, bin_class, name)
-        for bin_class, name in BIN_TYPES.items()
+        BinSensor(coordinator, entry, bin_class, name) for bin_class, name in BIN_TYPES.items()
     ]
     if "school_holidays" in data:
         entities.append(SchoolHolidayYearsSensor(data["school_holidays"]))
@@ -91,9 +90,7 @@ class BinSensor(CoordinatorEntity[EastDunbartonshireCoordinator], SensorEntity):
 # ---------------------------------------------------------------------------
 
 
-class SchoolHolidayYearsSensor(
-    CoordinatorEntity[SchoolHolidaysCoordinator], SensorEntity
-):
+class SchoolHolidayYearsSensor(CoordinatorEntity[SchoolHolidaysCoordinator], SensorEntity):
     """Tracks which academic years' data is available. Automating on state change detects new releases."""
 
     _attr_has_entity_name = True
@@ -143,9 +140,7 @@ class PlanningApplicationsSensor(CoordinatorEntity[PlanningCoordinator], SensorE
                     "reference": a.reference,
                     "address": a.address,
                     "description": a.description,
-                    "date_modified": (
-                        a.date_modified.isoformat() if a.date_modified else None
-                    ),
+                    "date_modified": (a.date_modified.isoformat() if a.date_modified else None),
                     "distance_m": a.distance_m,
                     "url": a.url,
                 }
