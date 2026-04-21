@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.0...v0.3.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* add brown and blue bin types to BIN_TYPES ([fb5df9a](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/fb5df9a993d4415cf36b5025c84205f2c98bc6cb))
+
 ## [0.3.0](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.2.0...v0.3.0) (2026-04-21)
 
 
