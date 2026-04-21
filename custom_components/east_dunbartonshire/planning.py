@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from math import asin, cos, radians, sin, sqrt
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -34,6 +34,8 @@ class PlanningApplication:
     date_modified: date | None
     url: str
     distance_m: int | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 @dataclass
@@ -69,11 +71,22 @@ class PlanningCoordinator(DataUpdateCoordinator[PlanningData]):
                 self._easting, self._northing = await _latlon_to_bng(
                     self.session, self._lat, self._lon
                 )
+            easting: int = self._easting
+            northing: int = self._northing  # type: ignore[assignment]
             return await _fetch_nearby(
-                self.session, self._easting, self._northing, self._radius_m
+                self.session, easting, northing, self._lat, self._lon, self._radius_m
             )
         except Exception as err:
             raise UpdateFailed(f"Error fetching planning applications: {err}") from err
+
+
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6_371_000.0
+    phi1, phi2 = radians(lat1), radians(lat2)
+    dphi = radians(lat2 - lat1)
+    dlam = radians(lon2 - lon1)
+    a = sin(dphi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(dlam / 2) ** 2
+    return r * 2 * asin(sqrt(a))
 
 
 async def _latlon_to_bng(session, lat: float, lon: float) -> tuple[int, int]:
@@ -91,7 +104,12 @@ async def _latlon_to_bng(session, lat: float, lon: float) -> tuple[int, int]:
 
 
 async def _fetch_nearby(
-    session, home_easting: int, home_northing: int, radius_m: int
+    session,
+    home_easting: int,
+    home_northing: int,
+    home_lat: float,
+    home_lon: float,
+    radius_m: int,
 ) -> PlanningData:
     bbox = {
         "xmin": home_easting - radius_m,
@@ -104,7 +122,7 @@ async def _fetch_nearby(
         "geometry": json.dumps(bbox, separators=(",", ":")),
         "geometryType": "esriGeometryEnvelope",
         "inSR": "27700",
-        "outSR": "27700",
+        "outSR": "4326",
         "spatialRel": "esriSpatialRelIntersects",
         "where": "ISPAVISIBLE=1",
         "outFields": "REFVAL,KEYVAL,ADDRESS,DESCRIPTION,DATEMODIFIED",
@@ -124,12 +142,12 @@ async def _fetch_nearby(
         centroid = feature.get("centroid")
         if not centroid:
             continue
-        dist = math.sqrt(
-            (centroid["x"] - home_easting) ** 2 + (centroid["y"] - home_northing) ** 2
-        )
+        # outSR=4326: centroid x=longitude, y=latitude
+        app_lon, app_lat = centroid["x"], centroid["y"]
+        dist = _haversine_m(home_lat, home_lon, app_lat, app_lon)
         if dist > radius_m:
             continue
-        app = _parse_feature(attrs, round(dist))
+        app = _parse_feature(attrs, round(dist), app_lat, app_lon)
         if app:
             nearby.append(app)
 
@@ -137,7 +155,9 @@ async def _fetch_nearby(
     return PlanningData(applications=nearby, search_radius_m=radius_m)
 
 
-def _parse_feature(attrs: dict, distance_m: int) -> PlanningApplication | None:
+def _parse_feature(
+    attrs: dict, distance_m: int, latitude: float, longitude: float
+) -> PlanningApplication | None:
     keyval = attrs.get("KEYVAL", "")
     if not keyval:
         return None
@@ -162,4 +182,6 @@ def _parse_feature(attrs: dict, distance_m: int) -> PlanningApplication | None:
         date_modified=date_modified,
         url=url,
         distance_m=distance_m,
+        latitude=latitude,
+        longitude=longitude,
     )
