@@ -5,8 +5,7 @@ A [Home Assistant](https://www.home-assistant.io/) custom integration for East D
 ## Features
 
 - **Bin collections** — sensors and calendar for upcoming bin collection dates, looked up by address
-
-More features planned: school holidays, planning applications, and more.
+- **Planning applications** — nearby planning applications shown as map pins, filtered to applications modified in the last 90 days
 
 ## Installation
 
@@ -33,3 +32,4 @@ Once configured, the integration creates:
 
 - **Calendar** — shows upcoming bin collection events; works with the Home Assistant calendar card
 - **Sensors** — one per bin type (Food caddy, Green bin, Grey bin), showing the date of the next collection with a `days_until` attribute
+- **Geo location entities** — one per nearby planning application (within your configured search radius), shown as map pins; each entity includes `address`, `description`, `date_modified`, and `url` attributes
