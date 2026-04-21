@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.2.0...v0.3.0) (2026-04-21)
+
+
+### Features
+
+* planning application map pins via geo_location platform ([2b9535d](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/2b9535dfd54de58a1330f3cd9e55d6206e6e092e))
+
+
+### Bug Fixes
+
+* ruff format - collapse expressions that fit on one line ([f7aaadd](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/f7aaaddbd05b6040942a9eac66115adf3cd86e84))
+
 ## [0.2.0](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.1.0...v0.2.0) (2026-04-21)
 
 
