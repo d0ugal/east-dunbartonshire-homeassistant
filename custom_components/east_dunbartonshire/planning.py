@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from math import asin, cos, radians, sin, sqrt
 
 from homeassistant.core import HomeAssistant
@@ -129,7 +129,7 @@ async def _fetch_nearby(
             "ISPAVISIBLE=1 AND DATEMODIFIED>="
             + str(
                 int(
-                    (datetime.now(timezone.utc) - timedelta(days=_RECENT_DAYS)).timestamp()
+                    (datetime.now(UTC) - timedelta(days=_RECENT_DAYS)).timestamp()
                     * 1000
                 )
             )
