@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from math import asin, cos, radians, sin, sqrt
 
 from homeassistant.core import HomeAssistant
@@ -24,6 +24,7 @@ _ARCGIS_REFERER = (
 )
 _POSTCODES_IO_REVERSE = "https://api.postcodes.io/postcodes"
 DEFAULT_RADIUS_M = 500
+_RECENT_DAYS = 90
 
 
 @dataclass
@@ -124,7 +125,15 @@ async def _fetch_nearby(
         "inSR": "27700",
         "outSR": "4326",
         "spatialRel": "esriSpatialRelIntersects",
-        "where": "ISPAVISIBLE=1",
+        "where": (
+            "ISPAVISIBLE=1 AND DATEMODIFIED>="
+            + str(
+                int(
+                    (datetime.now(timezone.utc) - timedelta(days=_RECENT_DAYS)).timestamp()
+                    * 1000
+                )
+            )
+        ),
         "outFields": "REFVAL,KEYVAL,ADDRESS,DESCRIPTION,DATEMODIFIED",
         "returnGeometry": "false",
         "returnCentroid": "true",
