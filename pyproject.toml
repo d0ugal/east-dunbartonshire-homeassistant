@@ -1,6 +1,6 @@
 [project]
 name = "east-dunbartonshire-homeassistant"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = []
 
 [project.optional-dependencies]
