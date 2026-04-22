@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.2...v0.3.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* add BINARY_SENSOR and GEO_LOCATION to _Platform stub ([4812eca](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/4812ecac71266b15185ad8111e264f880d6908d4))
+* restore blank line between stdlib and local imports ([312f5b6](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/312f5b625e1995be65af0a670305284097ab6fd4))
+
 ## [0.3.2](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.1...v0.3.2) (2026-04-21)
 
 
