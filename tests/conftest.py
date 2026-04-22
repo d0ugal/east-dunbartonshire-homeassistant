@@ -23,7 +23,9 @@ class _HomeAssistant:
 
 
 class _Platform:
+    BINARY_SENSOR = "binary_sensor"
     CALENDAR = "calendar"
+    GEO_LOCATION = "geo_location"
     SENSOR = "sensor"
 
 
@@ -46,7 +48,9 @@ _add("homeassistant.config_entries", ConfigEntry=_ConfigEntry)
 _add("homeassistant.const", Platform=_Platform)
 _add("homeassistant.core", HomeAssistant=_HomeAssistant)
 _add("homeassistant.helpers")
-_add("homeassistant.helpers.aiohttp_client", async_get_clientsession=lambda *a, **k: None)
+_add(
+    "homeassistant.helpers.aiohttp_client", async_get_clientsession=lambda *a, **k: None
+)
 _add(
     "homeassistant.helpers.update_coordinator",
     DataUpdateCoordinator=_DataUpdateCoordinator,
