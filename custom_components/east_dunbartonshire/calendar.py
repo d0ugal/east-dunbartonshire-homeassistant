@@ -22,9 +22,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     data = hass.data[DOMAIN]
-    entities: list[CalendarEntity] = [
-        BinCollectionsCalendar(data[entry.entry_id], entry)
-    ]
+    entities: list[CalendarEntity] = [BinCollectionsCalendar(data[entry.entry_id], entry)]
     if "school_holidays" in data:
         entities += [
             SchoolHolidaysCalendar(data["school_holidays"]),
@@ -38,15 +36,11 @@ async def async_setup_entry(
 # ---------------------------------------------------------------------------
 
 
-class BinCollectionsCalendar(
-    CoordinatorEntity[EastDunbartonshireCoordinator], CalendarEntity
-):
+class BinCollectionsCalendar(CoordinatorEntity[EastDunbartonshireCoordinator], CalendarEntity):
     _attr_has_entity_name = True
     _attr_name = "Bin collections"
 
-    def __init__(
-        self, coordinator: EastDunbartonshireCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: EastDunbartonshireCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_calendar"
         self._attr_device_info = DeviceInfo(
@@ -74,11 +68,7 @@ class BinCollectionsCalendar(
             return []
         start = start_date.date()
         end = end_date.date()
-        return [
-            _make_bin_event(c)
-            for c in self.coordinator.data
-            if start <= c.next_date < end
-        ]
+        return [_make_bin_event(c) for c in self.coordinator.data if start <= c.next_date < end]
 
 
 def _make_bin_event(collection: BinCollection) -> CalendarEvent:

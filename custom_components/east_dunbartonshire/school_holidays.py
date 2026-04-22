@@ -61,13 +61,10 @@ async def _fetch_school_holidays(session) -> SchoolHolidaysData:
         resp.raise_for_status()
         html = await resp.text()
 
-    ics_urls = re.findall(
-        r'href="([^"]+school-holidays[^"]+\.ics)"', html, re.IGNORECASE
-    )
+    ics_urls = re.findall(r'href="([^"]+school-holidays[^"]+\.ics)"', html, re.IGNORECASE)
     # Make absolute
     ics_urls = [
-        u if u.startswith("http") else f"https://www.eastdunbarton.gov.uk{u}"
-        for u in ics_urls
+        u if u.startswith("http") else f"https://www.eastdunbarton.gov.uk{u}" for u in ics_urls
     ]
 
     available_years = [_year_from_url(u) for u in ics_urls]

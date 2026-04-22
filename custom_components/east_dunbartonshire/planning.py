@@ -118,9 +118,7 @@ async def _fetch_nearby(
         "xmax": home_easting + radius_m,
         "ymax": home_northing + radius_m,
     }
-    cutoff_ms = int(
-        (datetime.now(UTC) - timedelta(days=_RECENT_DAYS)).timestamp() * 1000
-    )
+    cutoff_ms = int((datetime.now(UTC) - timedelta(days=_RECENT_DAYS)).timestamp() * 1000)
     params = {
         "f": "json",
         "geometry": json.dumps(bbox, separators=(",", ":")),
