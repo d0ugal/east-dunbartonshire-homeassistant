@@ -37,7 +37,9 @@ async def async_setup_entry(
     )
 
 
-class SchoolHolidayTodaySensor(CoordinatorEntity[SchoolHolidaysCoordinator], BinarySensorEntity):
+class SchoolHolidayTodaySensor(
+    CoordinatorEntity[SchoolHolidaysCoordinator], BinarySensorEntity
+):
     _attr_has_entity_name = True
     _attr_name = "School holiday today"
     _attr_unique_id = "east_dunbartonshire_school_holiday_today"
@@ -55,7 +57,9 @@ class SchoolHolidayTodaySensor(CoordinatorEntity[SchoolHolidaysCoordinator], Bin
         )
 
 
-class InServiceDayTodaySensor(CoordinatorEntity[SchoolHolidaysCoordinator], BinarySensorEntity):
+class InServiceDayTodaySensor(
+    CoordinatorEntity[SchoolHolidaysCoordinator], BinarySensorEntity
+):
     _attr_has_entity_name = True
     _attr_name = "In-service day today"
     _attr_unique_id = "east_dunbartonshire_in_service_day_today"
@@ -67,5 +71,7 @@ class InServiceDayTodaySensor(CoordinatorEntity[SchoolHolidaysCoordinator], Bina
             return False
         today = datetime.date.today()
         return any(
-            e.start <= today < e.end for e in self.coordinator.data.events if e.is_in_service_day
+            e.start <= today < e.end
+            for e in self.coordinator.data.events
+            if e.is_in_service_day
         )

@@ -20,7 +20,9 @@ EAST_DUNBARTONSHIRE_URL = (
     "https://www.eastdunbarton.gov.uk/services/a-z-of-services/"
     "bins-waste-and-recycling/bins-and-recycling/collections/"
 )
-EAST_DUNBARTONSHIRE_UPRN_URL = "https://www.eastdunbarton.gov.uk/umbraco/api/bincollection/GetUPRNs"
+EAST_DUNBARTONSHIRE_UPRN_URL = (
+    "https://www.eastdunbarton.gov.uk/umbraco/api/bincollection/GetUPRNs"
+)
 
 
 @dataclass
@@ -79,7 +81,9 @@ def _parse_html(html: str) -> list[BinCollection]:
 
 
 async def fetch_uprns(session, address: str) -> list[dict]:
-    async with session.get(EAST_DUNBARTONSHIRE_UPRN_URL, params={"address": address}) as resp:
+    async with session.get(
+        EAST_DUNBARTONSHIRE_UPRN_URL, params={"address": address}
+    ) as resp:
         resp.raise_for_status()
         return await resp.json()
 

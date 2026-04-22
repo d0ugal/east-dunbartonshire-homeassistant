@@ -34,7 +34,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         domain_data["school_holidays"] = school_coordinator
 
     # Planning coordinator — proximity is relative to the HA home location
-    planning_coordinator = PlanningCoordinator(hass, hass.config.latitude, hass.config.longitude)
+    planning_coordinator = PlanningCoordinator(
+        hass, hass.config.latitude, hass.config.longitude
+    )
     await planning_coordinator.async_config_entry_first_refresh()
     domain_data[f"{entry.entry_id}_planning"] = planning_coordinator
 
