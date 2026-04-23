@@ -8,6 +8,7 @@ Run with: uv run --extra integration pytest tests/integration/ -v
 """
 
 import pytest
+
 from custom_components.east_dunbartonshire.coordinator import (
     _fetch_collections,
     fetch_uprns,
