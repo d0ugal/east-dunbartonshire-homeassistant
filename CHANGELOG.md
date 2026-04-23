@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.4](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.3...v0.3.4) (2026-04-23)
+
+
+### Bug Fixes
+
+* add blank line between import blocks for ruff I001 ([2a22cfb](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/2a22cfbbab3e0f192625e378d32bb24775ca82fe))
+* update integration test to match current single-council coordinator ([a6ab440](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/a6ab44066b2341216294349c75ab0059678e988a))
+
 ## [0.3.3](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.2...v0.3.3) (2026-04-22)
 
 
