@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 from dataclasses import dataclass, field
@@ -169,10 +170,8 @@ def _parse_feature(
     date_modified: date | None = None
     raw = attrs.get("DATEMODIFIED")
     if isinstance(raw, (int, float)):
-        try:
+        with contextlib.suppress(OSError, OverflowError, ValueError):
             date_modified = datetime.utcfromtimestamp(raw / 1000).date()
-        except (OSError, OverflowError, ValueError):
-            pass
     url = (
         "https://planning.eastdunbarton.gov.uk/online-applications/"
         f"applicationDetails.do?activeTab=summary&keyVal={keyval}"
