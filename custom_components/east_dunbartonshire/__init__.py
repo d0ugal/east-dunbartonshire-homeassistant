@@ -27,15 +27,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await bins_coordinator.async_config_entry_first_refresh()
     domain_data[entry.entry_id] = bins_coordinator
 
-    # School holidays coordinator — shared across all entries, set up once
+    # School holidays coordinator — shared across all entries, set up once.
+    # Optional data: use async_refresh so a failing source leaves its sensors
+    # unavailable (and retried on the update interval) instead of failing the
+    # whole entry and taking the bin sensors down with it.
     if "school_holidays" not in domain_data:
         school_coordinator = SchoolHolidaysCoordinator(hass)
-        await school_coordinator.async_config_entry_first_refresh()
+        await school_coordinator.async_refresh()
         domain_data["school_holidays"] = school_coordinator
 
-    # Planning coordinator — proximity is relative to the HA home location
+    # Planning coordinator — proximity is relative to the HA home location.
+    # Optional data, see above: the council planning server is often down.
     planning_coordinator = PlanningCoordinator(hass, hass.config.latitude, hass.config.longitude)
-    await planning_coordinator.async_config_entry_first_refresh()
+    await planning_coordinator.async_refresh()
     domain_data[f"{entry.entry_id}_planning"] = planning_coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
