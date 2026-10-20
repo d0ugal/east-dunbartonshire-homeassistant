@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.4...v0.3.5) (2026-10-20)
+
+
+### Bug Fixes
+
+* don't fail setup when planning or school holiday data is unavailable ([41bc7d6](https://github.com/d0ugal/east-dunbartonshire-homeassistant/commit/41bc7d61be6954556bc3b9c3f7893fae0fa01717))
+
 ## [0.3.4](https://github.com/d0ugal/east-dunbartonshire-homeassistant/compare/v0.3.3...v0.3.4) (2026-04-23)
 
 
